@@ -14,7 +14,7 @@ instance singleton {α} : Singleton α (Set α) where
 instance insert {α} : Insert α (Set α) where
   insert x s := λ y ↦ y = x ∨ y ∈ s
 
-/-- Illustration: The order in which elements of a set are is irrelevant -/
+/-- Illustration: The order of elements in a set is irrelevant -/
 example : ({1, 2, 3} : Set Int) = {1, 3, 2} := by
   apply ext
   intro x
@@ -40,8 +40,11 @@ notation a:40 " ⊂ " b:40 => a ⊆ b
 def strict_subset {α} (s₁ s₂ : Set α) := s₁ ⊆ s₂ ∧ s₁ ≠ s₂
 notation a:40 " ⊊ " b:40 => strict_subset a b
 
-def power_universe {α} : Set (Set α) := λ _ ↦ True
-def power_set {α} (s : Set α) := {s' ∈ power_universe | s' ⊆ s}
+def every (α) : Set α := λ _ ↦ True
+def power_set {α} (s : Set α) := {s' ∈ every (Set α) | s' ⊆ s}
+
+instance {α : Type } : Union (Set α) where
+  union a b := λ x ↦ x ∈ a ∨ x ∈ b
 
 end Set
 
@@ -52,7 +55,6 @@ macro_rules
 | `(∀ $x' $x'' $xs* ∈ $set, $consequence) => do
   let consequence' ← xs.foldrM (λ x t ↦ `($x ∈ $set → $t)) consequence
   `(∀ $x' $x'' $xs*, $x' ∈ $set → $x'' ∈ $set → $consequence')
-
 
 syntax (name := exist_members_st) "∃ " ident ident+ " ∈ " term ", " term : term
 @[macro exist_members_st]

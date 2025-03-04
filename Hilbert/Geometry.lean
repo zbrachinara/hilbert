@@ -3,9 +3,11 @@ import Hilbert.Set
 class Geometry (point : Type) where
   line : Set (Set point)
 
+open Geometry
+
 inductive Colinear : point → point → point → Prop where
-| colinear {point} [geo : Geometry point] (a b c : point)
-    (evidence : ∃ l ∈ geo.line, a ∈ l ∧ b ∈ l ∧ c ∈ l) :
+| colinear {point} [Geometry point] (a b c : point)
+    (evidence : ∃ l ∈ line, a ∈ l ∧ b ∈ l ∧ c ∈ l) :
     Colinear a b c
 
 class IncidenceGeometry (point : Type) extends Geometry point where
@@ -13,17 +15,17 @@ class IncidenceGeometry (point : Type) extends Geometry point where
   line_nonempty : ∀ l ∈ line, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   non_colinearity : ∃ a b c : point, ¬ Colinear a b c
 
-class PointOrder (point : Type) where
-  between (a b c : point) : Prop
+inductive between : point → point → point → Prop where
+| mk (a b c) : between a b c
 
 syntax (name := order_relation) "⟪" term " ∗ " term " ∗ " term "⟫": term
 macro_rules
-| `(⟪$p ∗ $q ∗ $r⟫) => `(PointOrder.between $p $q $r)
+| `(⟪$p ∗ $q ∗ $r⟫) => `(between $p $q $r)
 
 def Dichotomy (a b : Prop) : Prop := (a ∧ ¬ b) ∨ (¬ a ∧ b)
 def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c) ∨ (¬ a ∧ b ∧ c)
 
-class OrderGeometry (point : Type) [PointOrder point] extends IncidenceGeometry point where
+class OrderGeometry (point : Type) extends IncidenceGeometry point where
   order_symmetric : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → Colinear a b c
@@ -34,3 +36,10 @@ class OrderGeometry (point : Type) [PointOrder point] extends IncidenceGeometry 
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l ∈ line, d ∈ l →
     ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
+
+def Segment {point} [OrderGeometry point] (a b : point) : Set point :=
+  {a, b} ∪ {p ∈ Set.every point | ⟪a ∗ p ∗ b⟫}
+def Ray {point} [OrderGeometry point] (a b : point): Set point :=
+  Segment a b ∪ {p ∈ Set.every point | ⟪a ∗ b ∗ p⟫}
+def Angle {point} [OrderGeometry point] (a b c : point) : Set point :=
+  Ray a b ∪ Ray a c
