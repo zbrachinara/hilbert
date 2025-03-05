@@ -14,7 +14,8 @@ inductive Colinear : point → point → point → Prop where
     Colinear a b c
 
 class IncidenceGeometry (point : Type) extends Geometry point where
-  unique_line : ∀ x y : point, ∃ l ∈ line, ∀ l' ∈ line, x ∈ l' ∧ y ∈ l' ↔ l = l'
+  line_of (x y : point) : Set point
+  unique_line : ∀ x y : point, ∀ l' ∈ line, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
   line_nonempty : ∀ l ∈ line, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   non_colinearity : ∃ a b c : point, ¬ Colinear a b c
 
@@ -65,5 +66,3 @@ class HilbertPlane (point : Type) extends OrderGeometry point where
   sas_congruence : ∀ a b c a' b' c' : point,
     segment a b ≅ segment a' b' → segment a c ≅ segment a' c' → angle b a c ≅ angle b' a' c' →
     angle a b c ≅ angle a' b' c'
-
-#print axioms HilbertPlane
