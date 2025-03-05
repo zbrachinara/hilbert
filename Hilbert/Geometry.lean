@@ -43,3 +43,7 @@ def Ray {point} [OrderGeometry point] (a b : point): Set point :=
   Segment a b ∪ {p ∈ Set.every point | ⟪a ∗ b ∗ p⟫}
 def Angle {point} [OrderGeometry point] (a b c : point) : Set point :=
   Ray a b ∪ Ray a c
+
+def segment {point} [OrderGeometry point] := λ x ↦ ∃ a b : point, x = Segment a b
+def ray {point} [OrderGeometry point] := λ x ↦ ∃ a b : point, x = Ray a b
+def angle {point} [OrderGeometry point] := λ x ↦ ∃ a b c : point, x = Angle a b c
