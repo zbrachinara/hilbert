@@ -43,8 +43,11 @@ notation a:40 " ⊊ " b:40 => strict_subset a b
 def every (α) : Set α := λ _ ↦ True
 def power_set {α} (s : Set α) := {s' ∈ every (Set α) | s' ⊆ s}
 
-instance {α : Type } : Union (Set α) where
+instance {α : Type} : Union (Set α) where
   union a b := λ x ↦ x ∈ a ∨ x ∈ b
+
+instance {α : Type} : Inter (Set α) where
+  inter a b := λ x ↦ x ∈ a ∧ x ∈ b
 
 end Set
 

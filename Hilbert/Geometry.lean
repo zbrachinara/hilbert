@@ -11,16 +11,12 @@ inductive Colinear : point → point → point → Prop where
     Colinear a b c
 
 class IncidenceGeometry (point : Type) extends Geometry point where
-  unique_line : ∀ x y : point, ∃ l ∈ line, ∀ l' ∈ line, x ∈ l' → y ∈ l' → l = l'
+  unique_line : ∀ x y : point, ∃ l ∈ line, ∀ l' ∈ line, x ∈ l' ∧ y ∈ l' ↔ l = l'
   line_nonempty : ∀ l ∈ line, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   non_colinearity : ∃ a b c : point, ¬ Colinear a b c
 
-inductive between : point → point → point → Prop where
-| mk (a b c) : between a b c
-
-syntax (name := order_relation) "⟪" term " ∗ " term " ∗ " term "⟫": term
-macro_rules
-| `(⟪$p ∗ $q ∗ $r⟫) => `(between $p $q $r)
+structure between (a b c : point) : Prop
+notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
 
 def Dichotomy (a b : Prop) : Prop := (a ∧ ¬ b) ∨ (¬ a ∧ b)
 def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c) ∨ (¬ a ∧ b ∧ c)
@@ -37,13 +33,34 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
     ∀ l ∈ line, d ∈ l →
     ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
 
-def Segment {point} [OrderGeometry point] (a b : point) : Set point :=
+def segment {point} [OrderGeometry point] (a b : point) : Set point :=
   {a, b} ∪ {p ∈ Set.every point | ⟪a ∗ p ∗ b⟫}
-def Ray {point} [OrderGeometry point] (a b : point): Set point :=
-  Segment a b ∪ {p ∈ Set.every point | ⟪a ∗ b ∗ p⟫}
-def Angle {point} [OrderGeometry point] (a b c : point) : Set point :=
-  Ray a b ∪ Ray a c
+def ray {point} [OrderGeometry point] (a b : point): Set point :=
+  segment a b ∪ {p ∈ Set.every point | ⟪a ∗ b ∗ p⟫}
+def angle {point} [OrderGeometry point] (a b c : point) : Set point :=
+  ray b a ∪ ray b c
 
-def segment {point} [OrderGeometry point] := λ x ↦ ∃ a b : point, x = Segment a b
-def ray {point} [OrderGeometry point] := λ x ↦ ∃ a b : point, x = Ray a b
-def angle {point} [OrderGeometry point] := λ x ↦ ∃ a b c : point, x = Angle a b c
+def Segment (point) [OrderGeometry point] : Set (Set point) := λ x ↦ ∃ a b : point, x = segment a b
+def Ray (point) [OrderGeometry point] : Set (Set point) := λ x ↦ ∃ a b : point, x = ray a b
+def Angle (point) [OrderGeometry point] : Set (Set point) := λ x ↦ ∃ a b c : point, x = angle a b c
+
+structure congruent (x y : locus) : Prop
+infix:30 (name := locus_congruence) " ≅ " => congruent
+
+class HilbertPlane (point : Type) extends OrderGeometry point where
+  segment_congruence : ∀ a b c d : point,
+    ∃ p ∈ ray c d, ∀ p' ∈ ray c d, segment a b ≅ segment c p ↔ p' = p
+  segment_congruence_equivalence : Equivalence (@congruent {s : Set point // s ∈ Segment point})
+  addition_congruent : ∀ a b c a' b' c' : point,
+    Colinear a b c → Colinear a' b' c' →
+    segment a b ∩ segment b c = {b} → segment a' b' ∩ segment b' c' = {b'} →
+    segment a b ≅ segment a' b' → segment b c ≅ segment b' c' →
+    segment a c ≅ segment a' c'
+  angle_congruence : ∀ a b c d g : point, ∃ e f : point, ∀ p : point,
+    angle a b c ≅ angle p d g → p = e ∨ p = f
+  angle_congruence_equivalence : Equivalence (@congruent {s : Set point // s ∈ Angle point})
+  sas_congruence : ∀ a b c a' b' c' : point,
+    segment a b ≅ segment a' b' → segment a c ≅ segment a' c' → angle b a c ≅ angle b' a' c' →
+    angle a b c ≅ angle a' b' c'
+
+#print axioms HilbertPlane
