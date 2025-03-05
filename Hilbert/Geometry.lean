@@ -3,6 +3,9 @@ import Hilbert.Set
 class Geometry (point : Type) where
   line : Set (Set point)
 
+def Line' point [Geometry point] := Set point
+def Line {point} [Geometry point] := Line' point
+
 open Geometry
 
 inductive Colinear : point → point → point → Prop where

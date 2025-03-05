@@ -49,6 +49,9 @@ instance {α : Type} : Union (Set α) where
 instance {α : Type} : Inter (Set α) where
   inter a b := λ x ↦ x ∈ a ∧ x ∈ b
 
+instance {α : Type} : Sub (Set α) where
+  sub a b := λ x ↦ x ∈ a ∧ x ∉ b
+
 end Set
 
 -- Hack to prevent overloading -- only recognize this form if it has more than one binder (lmao)
