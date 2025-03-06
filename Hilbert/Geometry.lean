@@ -26,15 +26,15 @@ def Dichotomy (a b : Prop) : Prop := (a ∧ ¬ b) ∨ (¬ a ∧ b)
 def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c) ∨ (¬ a ∧ b ∧ c)
 
 class OrderGeometry (point : Type) extends IncidenceGeometry point where
-  order_symmetric : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
-  order_irreflexive : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
+  order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
+  order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → Colinear a b c
   extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫
-  order_unique : ∀ a b c : point, Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
+  order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch :
     ∀ a b c : point, ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
-    ∀ l ∈ line, d ∈ l →
+    ∀ l ∈ line, d ∈ l → c ∉ l →
     ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=

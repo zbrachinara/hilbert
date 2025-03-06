@@ -34,8 +34,6 @@ macro_rules
 
 def subset {α} (s₁ s₂ : Set α) := ∀ a, a ∈ s₁ → a ∈ s₂
 notation a:40 " ⊆ " b:40 => subset a b
-/-- Aluffi adopts ⊂ as the same as ⊆, and ⊊ for strict subsets. -/
-notation a:40 " ⊂ " b:40 => a ⊆ b
 
 def strict_subset {α} (s₁ s₂ : Set α) := s₁ ⊆ s₂ ∧ s₁ ≠ s₂
 notation a:40 " ⊊ " b:40 => strict_subset a b
@@ -48,6 +46,23 @@ instance {α : Type} : Union (Set α) where
 
 instance {α : Type} : Inter (Set α) where
   inter a b := λ x ↦ x ∈ a ∧ x ∈ b
+
+@[simp]
+theorem mem_union (x : α) (s t : Set α) : x ∈ s ∪ t ↔ x ∈ s ∨ x ∈ t := by
+  simp [Union.union, member]
+@[simp]
+theorem mem_inter (x : α) (s t : Set α) : x ∈ s ∩ t ↔ x ∈ s ∧ x ∈ t := by
+  simp [Inter.inter, member]
+
+@[simp]
+theorem empty_def {α} : (fun _ ↦ False) = ({} : Set α) := rfl
+
+@[simp]
+theorem union_empty (s : Set α) : s ∪ {} = s := by
+  apply ext
+  simp [Union.union, member]
+  intro _ x
+  exact False.elim x
 
 instance {α : Type} : Sub (Set α) where
   sub a b := λ x ↦ x ∈ a ∧ x ∉ b
