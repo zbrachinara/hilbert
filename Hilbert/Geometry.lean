@@ -8,16 +8,17 @@ def Line {point} [Geometry point] := Line' point
 
 open Geometry
 
-inductive Colinear : point → point → point → Prop where
-| colinear {point} [Geometry point] (a b c : point)
-    (evidence : ∃ l ∈ line, a ∈ l ∧ b ∈ l ∧ c ∈ l) :
-    Colinear a b c
+structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
+  evidence : ∃ l ∈ line, a ∈ l ∧ b ∈ l ∧ c ∈ l
 
 class IncidenceGeometry (point : Type) extends Geometry point where
   line_of (x y : point) : Set point
+  line_is_line (x y : point) : line_of x y ∈ line
   unique_line : ∀ x y : point, ∀ l' ∈ line, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
   line_nonempty : ∀ l ∈ line, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
-  non_colinearity : ∃ a b c : point, ¬ Colinear a b c
+  nontrivial : ∃ a b c : point, ¬ Colinear a b c
+
+export IncidenceGeometry (line_of)
 
 structure between (a b c : point) : Prop
 notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
@@ -28,11 +29,10 @@ def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c
 class OrderGeometry (point : Type) extends IncidenceGeometry point where
   order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
-  order_colinear : ∀ a b c : point, ⟪a ∗ b ∗ c⟫ → Colinear a b c
+  order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c
   extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫
   order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
-  pasch :
-    ∀ {a b c : point}, ¬ Colinear a b c →
+  pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l ∈ line, d ∈ l → c ∉ l →
     ∃ p : point, p ∈ l ∧ (⟪a ∗ p ∗ c⟫ ∨ ⟪b ∗ p ∗ c⟫)

@@ -41,6 +41,19 @@ theorem line_sidedness_is_equivalence {point} [geo : OrderGeometry point] :
       sorry
       sorry
 
+    refine Classical.byCases ?false this
+    intro colinear
+
+    have : l ≠ line_of x y := by
+      intro neg
+      -- subst l
+      have := colinear.contains_middle
+      rw [<- neg] at this
+      sorry -- obtain contradiction with yz
+
+    have ⟨p, pl, pnxy⟩ :=
+      unshared_point l (line_of x y) l_line (IncidenceGeometry.line_is_line x y) this
+
     sorry
 
 theorem plane_separation {point} [geo : OrderGeometry point] :
