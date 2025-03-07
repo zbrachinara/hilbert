@@ -67,6 +67,11 @@ theorem union_empty (s : Set α) : s ∪ {} = s := by
 instance {α : Type} : Sub (Set α) where
   sub a b := λ x ↦ x ∈ a ∧ x ∉ b
 
+theorem member_empty : ¬ ∃ x, x ∈ ({} : Set α) := by
+  apply not_exists.mpr
+  intro _ neg
+  exact neg
+
 theorem nonempty_exists {s : Set α} : s ≠ ∅ → ∃ x, x ∈ s := by
   intro s0
   apply Classical.byContradiction
