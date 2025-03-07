@@ -51,7 +51,7 @@ instance {α : Type} : Inter (Set α) where
 theorem mem_union (x : α) (s t : Set α) : x ∈ s ∪ t ↔ x ∈ s ∨ x ∈ t := by
   simp [Union.union, member]
 @[simp]
-theorem mem_inter (x : α) (s t : Set α) : x ∈ s ∩ t ↔ x ∈ s ∧ x ∈ t := by
+theorem mem_inter {x : α} {s t : Set α} : x ∈ s ∩ t ↔ x ∈ s ∧ x ∈ t := by
   simp [Inter.inter, member]
 
 @[simp]
@@ -66,6 +66,16 @@ theorem union_empty (s : Set α) : s ∪ {} = s := by
 
 instance {α : Type} : Sub (Set α) where
   sub a b := λ x ↦ x ∈ a ∧ x ∉ b
+
+theorem nonempty_exists {s : Set α} : s ≠ ∅ → ∃ x, x ∈ s := by
+  intro s0
+  apply Classical.byContradiction
+  intro negs
+  simp at negs
+  apply s0
+  apply ext
+  intro a
+  exact (iff_false_right fun a => a).mpr (negs a)
 
 end Set
 

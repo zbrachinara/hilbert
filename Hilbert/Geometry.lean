@@ -32,10 +32,10 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
   extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫
   order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch :
-    ∀ a b c : point, ¬ Colinear a b c →
+    ∀ {a b c : point}, ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l ∈ line, d ∈ l → c ∉ l →
-    ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
+    ∃ p : point, p ∈ l ∧ (⟪a ∗ p ∗ c⟫ ∨ ⟪b ∗ p ∗ c⟫)
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=
   {a, b} ∪ {p ∈ Set.every point | ⟪a ∗ p ∗ b⟫}
