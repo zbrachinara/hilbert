@@ -3,22 +3,26 @@ import Hilbert.Set
 class Geometry (point : Type) where
   line : Set (Set point)
 
-def Line' point [Geometry point] := Set point
-def Line {point} [Geometry point] := Line' point
+def Line point [geo : Geometry point] := {x : Set point // x ∈ geo.line}
+instance {point} [Geometry point] : Membership point (Line point) where
+  mem l x := x ∈ l.val
+instance {point} [Geometry point] : Coe (Line point) (Set point) where
+  coe x := x.val
 
 open Geometry
 
 structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
-  evidence : ∃ l ∈ line, a ∈ l ∧ b ∈ l ∧ c ∈ l
+  evidence : ∃ l : Line point, a ∈ l ∧ b ∈ l ∧ c ∈ l
 
 class IncidenceGeometry (point : Type) extends Geometry point where
-  line_of (x y : point) : Set point
-  line_is_line (x y : point) : line_of x y ∈ line
-  unique_line : ∀ x y : point, ∀ l' ∈ line, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
-  line_nonempty : ∀ l ∈ line, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
+  line_of (x y : point) : Line point
+  unique_line : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
+  line_nonempty : ∀ l : Line point, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   nontrivial : ∃ a b c : point, ¬ Colinear a b c
 
 export IncidenceGeometry (line_of)
+
+def line_locus {point} [IncidenceGeometry point] (x y : point) := (line_of x y).val
 
 structure between (a b c : point) : Prop
 notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
@@ -34,7 +38,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
   order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
-    ∀ l ∈ line, d ∈ l → c ∉ l →
+    ∀ l : Line point, d ∈ l → c ∉ l →
     ∃ p : point, p ∈ l ∧ (⟪a ∗ p ∗ c⟫ ∨ ⟪b ∗ p ∗ c⟫)
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=

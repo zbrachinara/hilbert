@@ -1,7 +1,7 @@
 import Hilbert.Geometry
 import Hilbert.Lemmas
 
-def line_sidedness {point} [OrderGeometry point] (l : Line' point) (p q : point) :=
+def line_sidedness {point} [OrderGeometry point] (l : Line point) (p q : point) :=
   (segment p q) ∩ l = {} ∨ p = q
 
 -- TODO workshop notation, doesn't look good without parentheses
@@ -9,8 +9,8 @@ notation l " ⇇ " x:40 ", " y:40 => line_sidedness l x y
 notation x " ⇇ " l " ⇉ " y:40 => ¬ line_sidedness l x y
 
 theorem line_sidedness_is_equivalence {point} [geo : OrderGeometry point] :
-  ∀ l ∈ geo.line, Equivalence (line_sidedness l) := by
-  intro l l_line
+  ∀ l : Line point, Equivalence (line_sidedness l) := by
+  intro l
   constructor
   · intro x; right; rfl
   · intro x y xy
@@ -37,7 +37,7 @@ theorem line_sidedness_is_equivalence {point} [geo : OrderGeometry point] :
       · sorry -- similarly dl, dz yz
       rcases Classical.em (y ∈ l) with yl | ynl
       · sorry
-      rcases geo.pasch noncolinear d dxz l l_line dl ynl with ⟨p, pl, pxy | pzy⟩
+      rcases geo.pasch noncolinear d dxz l dl ynl with ⟨p, pl, pxy | pzy⟩
       sorry
       sorry
 
@@ -51,13 +51,12 @@ theorem line_sidedness_is_equivalence {point} [geo : OrderGeometry point] :
       rw [<- neg] at this
       sorry -- obtain contradiction with yz
 
-    have ⟨p, pl, pnxy⟩ :=
-      unshared_point l (line_of x y) l_line (IncidenceGeometry.line_is_line x y) this
+    have ⟨p, pl, pnxy⟩ := unshared_point l (line_of x y) this
 
     sorry
 
 theorem plane_separation {point} [geo : OrderGeometry point] :
-  ∀ l ∈ geo.line, ∀ a b p ∈ Set.every point - l, (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
+  ∀ l : Line point, ∀ a b p ∈ Set.every point - l, (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
   := by sorry
 
 theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line, ∀ a b c p ∈ l,

@@ -1,5 +1,15 @@
 import Hilbert.Geometry
 
+section BaseLemmas
+
+variable {point} [geo : Geometry point]
+
+@[simp]
+theorem mem_line_locus (p : point) (l : Line point) : p ∈ l → p ∈ l.val := by
+  exact fun a => a
+
+end BaseLemmas
+
 open IncidenceGeometry
 
 section IncidenceLemmas
@@ -8,52 +18,52 @@ variable {point} [geo : IncidenceGeometry point]
 
 @[simp]
 theorem line_of_left : x ∈ geo.line_of x y := by
-  have := unique_line x y (geo.line_of x y) (by apply line_is_line)
+  have := unique_line x y (geo.line_of x y)
   have := this.mpr rfl
   exact this.left
 
 @[simp]
 theorem line_of_right : y ∈ geo.line_of x y := by
-  have := unique_line x y (geo.line_of x y) (by apply line_is_line)
+  have := unique_line x y (geo.line_of x y)
   have := this.mpr rfl
   exact this.right
 
 /--
 If two lines are different, then there must be some point that they do not share.
 -/
-theorem unshared_point: ∀ l l' ∈ geo.line, l ≠ l' → ∃ p, p ∈ l ∧ p ∉ l' := by
-  intro l l' l_line l'_line distinct_l
-  have ⟨p, q, _, pl, ql⟩:= line_nonempty l l_line
+theorem unshared_point: ∀ l l' : Line point, l ≠ l' → ∃ p, p ∈ l ∧ p ∉ l' := by
+  intro l l' distinct_l
+  have ⟨p, q, _, pl, ql⟩:= line_nonempty l
   rcases Classical.em (p ∈ l') with pl' | pnl'
   · rcases Classical.em (q ∈ l') with ql' | qnl'
     · have := unique_line p q
       exfalso
       apply distinct_l
       calc
-        _ = _ := (this l l_line).mp ⟨pl, ql⟩
-        _ = _ := by symm; exact (this l' l'_line).mp ⟨pl', ql'⟩
+        _ = _ := (this l).mp ⟨pl, ql⟩
+        _ = _ := by symm; exact (this l').mp ⟨pl', ql'⟩
     · exact ⟨q, ql, qnl'⟩
   · exact ⟨p, pl, pnl'⟩
 
 namespace Colinear
 
 theorem contains_left : Colinear x y z → x ∈ geo.line_of y z := by
-  intro ⟨l, l_line, xl, yl, zl⟩
-  have := unique_line y z l l_line
+  intro ⟨l, xl, yl, zl⟩
+  have := unique_line y z l
   have := this.mp ⟨yl, zl⟩
   subst l
   exact xl
 
 theorem contains_right : Colinear x y z → z ∈ geo.line_of x y := by
-  intro ⟨l, l_line, xl, yl, zl⟩
-  have := unique_line x y l l_line
+  intro ⟨l, xl, yl, zl⟩
+  have := unique_line x y l
   have := this.mp ⟨xl, yl⟩
   subst l
   exact zl
 
 theorem contains_middle : Colinear x y z → y ∈ geo.line_of x z := by
-  intro ⟨l, l_line, xl, yl, zl⟩
-  have := unique_line x z l l_line
+  intro ⟨l, xl, yl, zl⟩
+  have := unique_line x z l
   have := this.mp ⟨xl, zl⟩
   subst l
   exact yl
@@ -117,9 +127,9 @@ theorem segment_in_line : ∀ p q : point, segment p q ⊆ line_of p q := by
   unfold Set.subset
   intro a b p pab
   rcases on_segment pab with pa | pb | pab
-    <;> try {subst p; simp only [line_of_left, line_of_right]}
-  have ⟨l, l_line, al, pl, bl⟩ := order_colinear pab
-  have := unique_line a b l l_line
+    <;> try {subst p; apply mem_line_locus; simp only [line_of_left, line_of_right]}
+  have ⟨l, al, pl, bl⟩ := order_colinear pab
+  have := unique_line a b l
   have := this.mp ⟨al, bl⟩
   subst l
   exact pl
