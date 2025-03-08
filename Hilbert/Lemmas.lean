@@ -5,8 +5,7 @@ section BaseLemmas
 variable {point} [geo : Geometry point]
 
 @[simp]
-theorem mem_line_locus (p : point) (l : Line point) : p ∈ l → p ∈ l.val := by
-  exact fun a => a
+theorem mem_line_locus {p : point} {l : Line point} : p ∈ l ↔ p ∈ l.val := ⟨id, id⟩
 
 end BaseLemmas
 
@@ -78,6 +77,25 @@ section OrderLemmas
 
 variable {point} [geo : OrderGeometry point]
 
+namespace between
+
+theorem contains_left : ⟪a ∗ b ∗ c⟫ → a ∈ geo.line_of b c := by
+  intro betw
+  apply Colinear.contains_left
+  exact order_colinear betw
+
+theorem contains_right : ⟪a ∗ b ∗ c⟫ → c ∈ geo.line_of a b := by
+  intro betw
+  apply Colinear.contains_right
+  exact order_colinear betw
+
+theorem contains_middle : ⟪a ∗ b ∗ c⟫ → b ∈ geo.line_of a c := by
+  intro betw
+  apply Colinear.contains_middle
+  exact order_colinear betw
+
+end between
+
 @[simp]
 theorem trivial_nonorder : ∀ p p': point, ¬ ⟪p ∗ p' ∗ p⟫ := by
   intro p p' neg
@@ -111,6 +129,22 @@ theorem on_segment {p a b: point} : p ∈ segment a b → p = a ∨ p = b ∨ �
     · right; left; assumption
   right; right; simp only [*]
 
+theorem segment_has_left (a b : point) : a ∈ segment a b := by
+  unfold segment
+  rw [Set.mem_union]
+  left
+  simp only [Set.insert]
+  left
+  rfl
+
+theorem segment_has_right (a b : point) : b ∈ segment a b := by
+  unfold segment
+  rw [Set.mem_union]
+  left
+  simp only [Set.insert, Set.member]
+  right
+  rfl
+
 @[simp]
 theorem segment_symm : ∀ p q : point, segment p q = segment q p := by
   intro p q
@@ -127,7 +161,7 @@ theorem segment_in_line : ∀ p q : point, segment p q ⊆ line_of p q := by
   unfold Set.subset
   intro a b p pab
   rcases on_segment pab with pa | pb | pab
-    <;> try {subst p; apply mem_line_locus; simp only [line_of_left, line_of_right]}
+    <;> try {subst p; apply mem_line_locus.mp; simp only [line_of_left, line_of_right]}
   have ⟨l, al, pl, bl⟩ := order_colinear pab
   have := unique_line a b l
   have := this.mp ⟨al, bl⟩
