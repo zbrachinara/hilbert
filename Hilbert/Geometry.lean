@@ -1,9 +1,9 @@
 import Hilbert.Set
 
 class Geometry (point : Type) where
-  line : Set (Set point)
+  line_set : Set (Set point)
 
-def Line point [geo : Geometry point] := {x : Set point // x ∈ geo.line}
+def Line point [geo : Geometry point] := {x : Set point // x ∈ geo.line_set}
 instance {point} [Geometry point] : Membership point (Line point) where
   mem l x := x ∈ l.val
 instance {point} [Geometry point] : Coe (Line point) (Set point) where
@@ -15,15 +15,14 @@ structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
   evidence : ∃ l : Line point, a ∈ l ∧ b ∈ l ∧ c ∈ l
 
 class IncidenceGeometry (point : Type) extends Geometry point where
-  line_of (x y : point) : Line point -- TODO rename as `line`
-  -- TODO extract below theorem into left and right implications
-  unique_line : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
+  line (x y : point) : Line point
+  line_uniqueness : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ line x y = l'
   line_nonempty : ∀ l : Line point, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   nontrivial : ∃ a b c : point, ¬ Colinear a b c
 
-export IncidenceGeometry (line_of)
+export IncidenceGeometry (line)
 
-def line_locus {point} [IncidenceGeometry point] (x y : point) := (line_of x y).val
+def line_locus {point} [IncidenceGeometry point] (x y : point) := (line x y).val
 
 structure between (a b c : point) : Prop
 notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
@@ -35,7 +34,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
   order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c
-  extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫
+  extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫ -- TODO make this constructive
   order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →

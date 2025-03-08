@@ -15,6 +15,9 @@ theorem line_sidedness_symmetric {point} [geo : OrderGeometry point]
   · left; rw [segment_symm]; assumption
   · right; symm; assumption
 
+/--
+  Transitivity of line-sidedness, with three specifically nontrivial and noncolinear points.
+-/
 theorem transitivity_lemma {point} [geo : OrderGeometry point]
   {a b c : point} {l : Line point}:
   segment a b ∩ l = ∅ → segment b c ∩ l = ∅ → ¬Colinear a c b → segment a c ∩ l = ∅ := by
@@ -33,6 +36,33 @@ theorem transitivity_lemma {point} [geo : OrderGeometry point]
   sorry
   sorry
 
+/--
+  No matter how we cut a line `l`, for any point `x` on `l` that is not on the cut, there is a
+  point `p` which is on the same side of the cut as `x`.
+
+  This theorem is used to create a point outside of a set of colinear points on the same side of a
+  cut as these points.
+ -/
+private theorem line_cut_lemma {point} [OrderGeometry point] (l cut : Line point) :
+  l ≠ cut → ∀ x ∈ l, x ∉ cut → ∃ p, segment x p ∩ cut = ∅ ∧ p ∉ l := by
+  intro lncut x xl xncut -- TODO we do not need l ≠ cut (needs classical reasoning)
+  have ⟨p, psep, pnl⟩ := unshared_point l cut lncut
+  have ⟨p', pxp'⟩ := OrderGeometry.extension p x
+  exists p'
+  constructor
+
+  -- Part 1 -- the segment x p' does not go through the cut
+  apply Set.empty_not_exists
+  intro y yl
+  rw [Set.mem_inter, mem_line] at yl
+  suffices x ∈ cut by
+    sorry
+
+  sorry
+
+  -- Part 2 -- p' doesn't lie on this line
+  sorry
+
 theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
   ∀ l : Line point, Equivalence (line_sidedness l) := by
   intro l
@@ -41,6 +71,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
   · exact line_sidedness_symmetric
   · intro x y z xy yz
 
+    -- Discharge trivial cases
     rcases xy; case inr t => rw [t]; assumption
     case inl xy =>
     left
@@ -50,49 +81,36 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     refine Classical.byCases ?false (transitivity_lemma xy yz)
     intro colinear
 
-    have : l ≠ line_of x y := by
+    have : l ≠ line x y := by
       intro neg
       have := colinear.contains_middle
       rw [<- neg] at this
       apply Set.member_empty yz
       exact ⟨z, segment_has_right y z, this⟩
 
-    have ⟨p, pl, pnxy⟩ := unshared_point l (line_of x y) this
+    have ⟨p, pl, pnxy⟩ := unshared_point l (line x y) this
     have ⟨p', pyp'⟩:= OrderGeometry.extension p y -- TODO extract this construction and relevant proofs
     have yp': segment y p' ∩ l = ∅ := by
       apply Set.empty_not_exists
       intro t tl
-      rw [Set.mem_inter, <- mem_line_locus] at tl
+      rw [Set.mem_inter, mem_line] at tl
       suffices y ∈ l by
         apply Set.member_empty yz
         refine ⟨y, segment_has_left y z, this⟩
       rcases on_segment tl.left with ty | tp' | ytp' <;> try subst t
       · exact tl.right
-      · have : l = line_of p p' := by
-          have := IncidenceGeometry.unique_line p p' l
-          apply this.mp
-          exact ⟨pl, tl.right⟩
-        subst this
+      · rw [<- line_unique pl tl.right]
         exact pyp'.contains_middle
-      suffices l = line_of y p' by subst l; exact line_of_left
+      suffices l = line y p' by subst l; exact line_of_left
       calc
-        _ = line_of p t := by
-          have := IncidenceGeometry.unique_line p t l
-          exact this.mp ⟨pl, tl.right⟩
-        _ = _ := by
-          symm
-          apply (IncidenceGeometry.unique_line p t (line_of y p')).mp
-          constructor
-          exact between.contains_left pyp'
-          exact between.contains_middle ytp'
+        _ = line p t := by symm; exact line_unique pl tl.right
+        _ = _ := line_unique (between.contains_left pyp') (between.contains_middle ytp')
 
     -- from p' ∉ line_of x y I can derive every noncolinearity necessary
-    have p'_extralinear : p' ∉ line_of x y := by
+    have p'_extralinear : p' ∉ line x y := by
       intro neg
       apply pnxy
-      have := IncidenceGeometry.unique_line y p' (line_of x y)
-      have := this.mp ⟨line_of_right, neg⟩
-      rw [this]
+      rw [<- line_unique line_of_right neg]
       exact between.contains_left pyp'
     have p'nxy := extralinear_middle p'_extralinear
     rw [colinear.right_transfers_line] at p'_extralinear
@@ -108,6 +126,6 @@ theorem plane_separation {point} [geo : OrderGeometry point] :
   ∀ l : Line point, ∀ a b p ∈ Set.every point - l, (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
   := by sorry
 
-theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line, ∀ a b c p ∈ l,
+theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line_set, ∀ a b c p ∈ l,
   ⟪a ∗ c ∗ b⟫ → p ≠ c → ⟪a ∗ p ∗ c⟫ ∨ ⟪c ∗ p ∗ b⟫
   := by sorry

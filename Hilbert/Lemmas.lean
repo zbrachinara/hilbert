@@ -5,7 +5,7 @@ section BaseLemmas
 variable {point} [geo : Geometry point]
 
 @[simp]
-theorem mem_line_locus {p : point} {l : Line point} : p ∈ l ↔ p ∈ l.val := ⟨id, id⟩
+theorem mem_line {p : point} {l : Line point} : p ∈ l.val ↔ p ∈ l := ⟨id, id⟩
 
 end BaseLemmas
 
@@ -16,14 +16,19 @@ section IncidenceLemmas
 variable {point} [geo : IncidenceGeometry point]
 
 @[simp]
-theorem line_of_left : x ∈ geo.line_of x y := by
-  have := unique_line x y (geo.line_of x y)
+theorem line_unique {x y : point} {l : Line point} : x ∈ l → y ∈ l → line x y = l := by
+  rw [<- and_imp]
+  apply (line_uniqueness x y l).mp
+
+@[simp]
+theorem line_of_left : x ∈ geo.line x y := by
+  have := line_uniqueness x y (geo.line x y)
   have := this.mpr rfl
   exact this.left
 
 @[simp]
-theorem line_of_right : y ∈ geo.line_of x y := by
-  have := unique_line x y (geo.line_of x y)
+theorem line_of_right : y ∈ geo.line x y := by
+  have := line_uniqueness x y (geo.line x y)
   have := this.mpr rfl
   exact this.right
 
@@ -35,36 +40,29 @@ theorem unshared_point: ∀ l l' : Line point, l ≠ l' → ∃ p, p ∈ l ∧ p
   have ⟨p, q, _, pl, ql⟩:= line_nonempty l
   rcases Classical.em (p ∈ l') with pl' | pnl'
   · rcases Classical.em (q ∈ l') with ql' | qnl'
-    · have := unique_line p q
-      exfalso
+    · exfalso
       apply distinct_l
       calc
-        _ = _ := (this l).mp ⟨pl, ql⟩
-        _ = _ := by symm; exact (this l').mp ⟨pl', ql'⟩
+        _ = _ := by symm; exact line_unique pl ql
+        _ = _ := line_unique pl' ql'
     · exact ⟨q, ql, qnl'⟩
   · exact ⟨p, pl, pnl'⟩
 
 namespace Colinear
 
-theorem contains_left : Colinear x y z → x ∈ geo.line_of y z := by
+theorem contains_left : Colinear x y z → x ∈ geo.line y z := by
   intro ⟨l, xl, yl, zl⟩
-  have := unique_line y z l
-  have := this.mp ⟨yl, zl⟩
-  subst l
+  rw [line_unique yl zl]
   exact xl
 
-theorem contains_right : Colinear x y z → z ∈ geo.line_of x y := by
+theorem contains_right : Colinear x y z → z ∈ geo.line x y := by
   intro ⟨l, xl, yl, zl⟩
-  have := unique_line x y l
-  have := this.mp ⟨xl, yl⟩
-  subst l
+  rw [line_unique xl yl]
   exact zl
 
-theorem contains_middle : Colinear x y z → y ∈ geo.line_of x z := by
+theorem contains_middle : Colinear x y z → y ∈ geo.line x z := by
   intro ⟨l, xl, yl, zl⟩
-  have := unique_line x z l
-  have := this.mp ⟨xl, zl⟩
-  subst l
+  rw [line_unique xl zl]
   exact yl
 
 @[simp]
@@ -88,32 +86,29 @@ theorem cross_symmetric {x y z : point} : Colinear x y z ↔ Colinear z y x := b
     exact ⟨l, zl, yl, xl⟩
   }
 
-theorem left_transfers_line : Colinear x y z → geo.line_of x y = geo.line_of x z := by
+theorem left_transfers_line : Colinear x y z → geo.line x y = geo.line x z := by
   intro col
-  have := unique_line x z (line_of x y)
-  exact this.mp ⟨line_of_left, contains_right col⟩
-theorem middle_transfers_line : Colinear x y z → geo.line_of x y = geo.line_of y z := by
+  apply line_unique line_of_left (contains_middle col)
+theorem middle_transfers_line : Colinear x y z → geo.line x y = geo.line y z := by
   intro col
-  have := unique_line y z (line_of x y)
-  exact this.mp ⟨line_of_right, contains_right col⟩
-theorem right_transfers_line : Colinear x y z → geo.line_of x z = geo.line_of y z := by
+  apply line_unique (contains_left col) line_of_left
+theorem right_transfers_line : Colinear x y z → geo.line x z = geo.line y z := by
   intro col
-  have := unique_line y z (line_of x z)
-  exact this.mp ⟨contains_middle col, line_of_right⟩
+  apply line_unique (contains_left col) line_of_right
 
 end Colinear
 
-theorem extralinear_left : a ∉ geo.line_of b c → ¬ Colinear a b c := by
+theorem extralinear_left : a ∉ geo.line b c → ¬ Colinear a b c := by
   apply mt
   intro x
   exact x.contains_left
 
-theorem extralinear_right : c ∉ geo.line_of a b → ¬ Colinear a b c := by
+theorem extralinear_right : c ∉ geo.line a b → ¬ Colinear a b c := by
   apply mt
   intro x
   exact x.contains_right
 
-theorem extralinear_middle : b ∉ geo.line_of a c → ¬ Colinear a b c := by
+theorem extralinear_middle : b ∉ geo.line a c → ¬ Colinear a b c := by
   apply mt
   intro x
   exact x.contains_middle
@@ -128,17 +123,17 @@ variable {point} [geo : OrderGeometry point]
 
 namespace between
 
-theorem contains_left : ⟪a ∗ b ∗ c⟫ → a ∈ geo.line_of b c := by
+theorem contains_left : ⟪a ∗ b ∗ c⟫ → a ∈ geo.line b c := by
   intro betw
   apply Colinear.contains_left
   exact order_colinear betw
 
-theorem contains_right : ⟪a ∗ b ∗ c⟫ → c ∈ geo.line_of a b := by
+theorem contains_right : ⟪a ∗ b ∗ c⟫ → c ∈ geo.line a b := by
   intro betw
   apply Colinear.contains_right
   exact order_colinear betw
 
-theorem contains_middle : ⟪a ∗ b ∗ c⟫ → b ∈ geo.line_of a c := by
+theorem contains_middle : ⟪a ∗ b ∗ c⟫ → b ∈ geo.line a c := by
   intro betw
   apply Colinear.contains_middle
   exact order_colinear betw
@@ -206,15 +201,13 @@ theorem segment_symm : ∀ p q : point, segment p q = segment q p := by
   · apply Set.ext
     simp [Set.member]
 
-theorem segment_in_line : ∀ p q : point, segment p q ⊆ line_of p q := by
+theorem segment_in_line : ∀ p q : point, segment p q ⊆ line p q := by
   unfold Set.subset
   intro a b p pab
   rcases on_segment pab with pa | pb | pab
-    <;> try {subst p; apply mem_line_locus.mp; simp only [line_of_left, line_of_right]}
+    <;> try {subst p; simp only [line_of_left, line_of_right, mem_line]}
   have ⟨l, al, pl, bl⟩ := order_colinear pab
-  have := unique_line a b l
-  have := this.mp ⟨al, bl⟩
-  subst l
+  rw [line_unique al bl]
   exact pl
 
 end OrderLemmas
