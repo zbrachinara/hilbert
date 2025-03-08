@@ -15,7 +15,8 @@ structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
   evidence : ∃ l : Line point, a ∈ l ∧ b ∈ l ∧ c ∈ l
 
 class IncidenceGeometry (point : Type) extends Geometry point where
-  line_of (x y : point) : Line point
+  line_of (x y : point) : Line point -- TODO rename as `line`
+  -- TODO extract below theorem into left and right implications
   unique_line : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ l' = line_of x y
   line_nonempty : ∀ l : Line point, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   nontrivial : ∃ a b c : point, ¬ Colinear a b c

@@ -58,7 +58,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
       exact ⟨z, segment_has_right y z, this⟩
 
     have ⟨p, pl, pnxy⟩ := unshared_point l (line_of x y) this
-    have ⟨p', pyp'⟩:= OrderGeometry.extension p y
+    have ⟨p', pyp'⟩:= OrderGeometry.extension p y -- TODO extract this construction and relevant proofs
     have yp': segment y p' ∩ l = ∅ := by
       apply Set.empty_not_exists
       intro t tl
@@ -86,10 +86,23 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
           exact between.contains_left pyp'
           exact between.contains_middle ytp'
 
-    have xp' := transitivity_lemma xy yp' sorry
-    have p'y := transitivity_lemma (by rw [segment_symm] at yp'; exact yp') yz sorry
-    apply transitivity_lemma xp' p'y
-    sorry
+    -- from p' ∉ line_of x y I can derive every noncolinearity necessary
+    have p'_extralinear : p' ∉ line_of x y := by
+      intro neg
+      apply pnxy
+      have := IncidenceGeometry.unique_line y p' (line_of x y)
+      have := this.mp ⟨line_of_right, neg⟩
+      rw [this]
+      exact between.contains_left pyp'
+    have p'nxy := extralinear_middle p'_extralinear
+    rw [colinear.right_transfers_line] at p'_extralinear
+    have p'nyz := extralinear_left  p'_extralinear
+    rw [<- colinear.middle_transfers_line] at p'_extralinear
+    have p'nxz := extralinear_right p'_extralinear
+
+    have xp' := transitivity_lemma xy yp' p'nxy
+    have p'y := transitivity_lemma (by rw [segment_symm] at yp'; exact yp') yz p'nyz
+    exact transitivity_lemma xp' p'y p'nxz
 
 theorem plane_separation {point} [geo : OrderGeometry point] :
   ∀ l : Line point, ∀ a b p ∈ Set.every point - l, (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)

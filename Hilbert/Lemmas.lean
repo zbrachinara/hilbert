@@ -67,7 +67,56 @@ theorem contains_middle : Colinear x y z → y ∈ geo.line_of x z := by
   subst l
   exact yl
 
+@[simp]
+theorem left_symmetric {x y z : point} : Colinear x y z ↔ Colinear y x z := by
+  constructor ; repeat {
+    rintro ⟨l, xl, yl, zl⟩
+    exact ⟨l, yl, xl, zl⟩
+  }
+
+@[simp]
+theorem right_symmetric {x y z : point} : Colinear x y z ↔ Colinear x z y := by
+  constructor ; repeat {
+    rintro ⟨l, xl, yl, zl⟩
+    exact ⟨l, xl, zl, yl⟩
+  }
+
+@[simp]
+theorem cross_symmetric {x y z : point} : Colinear x y z ↔ Colinear z y x := by
+  constructor ; repeat {
+    rintro ⟨l, xl, yl, zl⟩
+    exact ⟨l, zl, yl, xl⟩
+  }
+
+theorem left_transfers_line : Colinear x y z → geo.line_of x y = geo.line_of x z := by
+  intro col
+  have := unique_line x z (line_of x y)
+  exact this.mp ⟨line_of_left, contains_right col⟩
+theorem middle_transfers_line : Colinear x y z → geo.line_of x y = geo.line_of y z := by
+  intro col
+  have := unique_line y z (line_of x y)
+  exact this.mp ⟨line_of_right, contains_right col⟩
+theorem right_transfers_line : Colinear x y z → geo.line_of x z = geo.line_of y z := by
+  intro col
+  have := unique_line y z (line_of x z)
+  exact this.mp ⟨contains_middle col, line_of_right⟩
+
 end Colinear
+
+theorem extralinear_left : a ∉ geo.line_of b c → ¬ Colinear a b c := by
+  apply mt
+  intro x
+  exact x.contains_left
+
+theorem extralinear_right : c ∉ geo.line_of a b → ¬ Colinear a b c := by
+  apply mt
+  intro x
+  exact x.contains_right
+
+theorem extralinear_middle : b ∉ geo.line_of a c → ¬ Colinear a b c := by
+  apply mt
+  intro x
+  exact x.contains_middle
 
 end IncidenceLemmas
 
