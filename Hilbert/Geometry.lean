@@ -42,7 +42,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
     ∃ p : point, p ∈ l ∧ (⟪a ∗ p ∗ c⟫ ∨ ⟪b ∗ p ∗ c⟫)
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=
-  {a, b} ∪ {p ∈ Set.every point | ⟪a ∗ p ∗ b⟫}
+  {a, b} ∪ {p : point | ⟪a ∗ p ∗ b⟫}
 def ray {point} [OrderGeometry point] (a b : point): Set point :=
   segment a b ∪ {p ∈ Set.every point | ⟪a ∗ b ∗ p⟫}
 def angle {point} [OrderGeometry point] (a b c : point) : Set point :=

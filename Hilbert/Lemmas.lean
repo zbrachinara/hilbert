@@ -173,7 +173,7 @@ theorem on_segment {p a b: point} : p ∈ segment a b → p = a ∨ p = b ∨ �
     · right; left; assumption
   right; right; simp only [*]
 
-theorem segment_has_left (a b : point) : a ∈ segment a b := by
+theorem segment_has_left {a b : point} : a ∈ segment a b := by
   unfold segment
   rw [Set.mem_union]
   left
@@ -181,7 +181,7 @@ theorem segment_has_left (a b : point) : a ∈ segment a b := by
   left
   rfl
 
-theorem segment_has_right (a b : point) : b ∈ segment a b := by
+theorem segment_has_right {a b : point} : b ∈ segment a b := by
   unfold segment
   rw [Set.mem_union]
   left

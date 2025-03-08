@@ -22,10 +22,13 @@ example : ({1, 2, 3} : Set Int) = {1, 3, 2} := by
   rw [@or_comm (x = 2)]
 
 syntax "{" ident " ∈ " term " | " term "}" : term
+syntax "{" ident " : " term " | " term "}" : term
 macro_rules
 | `({ $x ∈ $s | $fx }) => `(λ $x ↦ $x ∈ $s ∧ $fx)
+| `({ $x : $s | $fx }) => `(λ ($x : $s) ↦ $fx)
 def ℤ : Set Int := λ _ ↦ True
 #check {x ∈ ℤ | x = 1}
+#check {x : Int | x = 1}
 
 syntax "{" term "|" Lean.binderIdent "∈" term "}" : term
 macro_rules

@@ -8,33 +8,30 @@ def line_sidedness {point} [OrderGeometry point] (l : Line point) (p q : point) 
 notation l " ⇇ " x:40 ", " y:40 => line_sidedness l x y
 notation x " ⇇ " l " ⇉ " y:40 => ¬ line_sidedness l x y
 
-theorem line_sidedness_symmetric {point} [geo : OrderGeometry point]
-  {a b : point} {l : Line point} : l ⇇ a, b → l ⇇ b, a := by
-  intro ab
-  cases ab
-  · left; rw [segment_symm]; assumption
-  · right; symm; assumption
-
 /--
   Transitivity of line-sidedness, with three specifically nontrivial and noncolinear points.
 -/
-theorem transitivity_lemma {point} [geo : OrderGeometry point]
+private theorem transitivity_lemma {point} [geo : OrderGeometry point]
   {a b c : point} {l : Line point}:
   segment a b ∩ l = ∅ → segment b c ∩ l = ∅ → ¬Colinear a c b → segment a c ∩ l = ∅ := by
   intro ab bc noncolinear
-
   apply Classical.byContradiction
   intro neg
   have ⟨d, ds⟩ := Set.nonempty_exists neg
   have ⟨dac, dl⟩ := Set.mem_inter.mp ds
   rcases on_segment dac with da | dc | dac
-  · sorry  -- dl, dx, xy create a contradiction
-  · sorry -- similarly dl, dz yz
+  · apply Set.member_empty ab
+    exact ⟨d, by subst d; exact segment_has_left, dl⟩
+  · apply Set.member_empty bc
+    exact ⟨d, by subst d; exact segment_has_right, dl⟩
   rcases Classical.em (b ∈ l) with bl | bnl
-  · sorry
-  rcases geo.pasch noncolinear d dac l dl bnl with ⟨p, pl, pxy | pzy⟩
-  sorry
-  sorry
+  · apply Set.member_empty ab
+    exact ⟨b, segment_has_right, bl⟩
+  rcases geo.pasch noncolinear d dac l dl bnl with ⟨p, pl, pab | pcb⟩
+  · apply Set.member_empty ab
+    exact ⟨p, by unfold segment; right; exact pab, pl⟩
+  · apply Set.member_empty bc
+    exact ⟨p, by unfold segment; right; exact OrderGeometry.order_symmetric pcb, pl⟩
 
 /--
   No matter how we cut a line `l`, for any point `x ∈ l` that is not on the cut, there is a point
@@ -76,7 +73,9 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
   intro l
   constructor
   · intro x; right; rfl
-  · exact line_sidedness_symmetric
+  · intro x y xy; cases xy
+    · left; rw [segment_symm]; assumption
+    · right; symm; assumption
   · intro x y z xy yz
 
     -- Discharge trivial cases
@@ -92,7 +91,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     have : y ∉ l := by
       intro yl
       apply (Set.member_empty xy)
-      exact ⟨y, segment_has_right x y, yl⟩
+      exact ⟨y, segment_has_right, yl⟩
     -- TODO maybe I can unpack colinearity instead of using the line specifically between x and y
     have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) l y line_of_right this
 
