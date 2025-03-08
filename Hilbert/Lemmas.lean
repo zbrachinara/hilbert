@@ -43,8 +43,8 @@ theorem unshared_point: ∀ l l' : Line point, l ≠ l' → ∃ p, p ∈ l ∧ p
     · exfalso
       apply distinct_l
       calc
-        _ = _ := by symm; exact line_unique pl ql
-        _ = _ := line_unique pl' ql'
+        l = line p q := by symm; exact line_unique pl ql
+        line p q = l' := line_unique pl' ql'
     · exact ⟨q, ql, qnl'⟩
   · exact ⟨p, pl, pnl'⟩
 
@@ -201,9 +201,9 @@ theorem segment_symm : ∀ p q : point, segment p q = segment q p := by
   · apply Set.ext
     simp [Set.member]
 
-theorem segment_in_line : ∀ p q : point, segment p q ⊆ line p q := by
+theorem segment_in_line {p q : point} : segment p q ⊆ line p q := by
   unfold Set.subset
-  intro a b p pab
+  intro p pab
   rcases on_segment pab with pa | pb | pab
     <;> try {subst p; simp only [line_of_left, line_of_right, mem_line]}
   have ⟨l, al, pl, bl⟩ := order_colinear pab
