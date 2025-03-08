@@ -108,7 +108,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     exact transitivity_lemma xp' p'y pnxz
 
 theorem plane_separation {point} [geo : OrderGeometry point] :
-  ∀ l : Line point, ∀ a b p ∈ Set.every point - l, (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
+  ∀ l : Line point, ∀ a b p : point, p ∉ l → (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
   := by sorry
 
 theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line_set, ∀ a b c p ∈ l,
