@@ -27,7 +27,8 @@ private theorem transitivity_lemma {point} [geo : OrderGeometry point]
   rcases Classical.em (b ∈ l) with bl | bnl
   · apply Set.member_empty ab
     exact ⟨b, segment_has_right, bl⟩
-  rcases geo.pasch noncolinear d dac l dl bnl with ⟨p, pl, pab | pcb⟩
+  have ⟨p, pl, p_through⟩ := geo.pasch noncolinear d dac l dl bnl
+  rcases p_through.either with pab | pcb
   · apply Set.member_empty ab
     exact ⟨p, by unfold segment; right; exact pab, pl⟩
   · apply Set.member_empty bc
@@ -107,7 +108,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     exact transitivity_lemma xp' p'y pnxz
 
 theorem plane_separation {point} [geo : OrderGeometry point] :
-  ∀ l : Line point, ∀ a b p : point, p ∉ l → (a ⇇ l ⇉ b) → (l ⇇ p, a) ∨ (l ⇇ p, b)
+  ∀ l : Line point, ∀ a b p : point, p ∉ l → (a ⇇ l ⇉ b) → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
   := by sorry
 
 theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line_set, ∀ a b c p ∈ l,

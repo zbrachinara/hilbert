@@ -1,4 +1,5 @@
-import Hilbert.Set
+import Hilbert.Foundations.Logic
+import Hilbert.Foundations.Set
 
 class Geometry (point : Type) where
   line_set : Set (Set point)
@@ -27,9 +28,6 @@ def line_locus {point} [IncidenceGeometry point] (x y : point) := (line x y).val
 structure between (a b c : point) : Prop
 notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
 
-def Dichotomy (a b : Prop) : Prop := (a ∧ ¬ b) ∨ (¬ a ∧ b)
-def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c) ∨ (¬ a ∧ b ∧ c)
-
 class OrderGeometry (point : Type) extends IncidenceGeometry point where
   order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
@@ -39,7 +37,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l : Line point, d ∈ l → c ∉ l →
-    ∃ p : point, p ∈ l ∧ (⟪a ∗ p ∗ c⟫ ∨ ⟪b ∗ p ∗ c⟫)
+    ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=
   {a, b} ∪ {p : point | ⟪a ∗ p ∗ b⟫}
