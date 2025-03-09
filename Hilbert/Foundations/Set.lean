@@ -70,12 +70,6 @@ theorem union_empty (s : Set α) : s ∪ {} = s := by
 instance {α : Type} : Sub (Set α) where
   sub a b := λ x ↦ x ∈ a ∧ x ∉ b
 
-theorem member_empty {s : Set α}: (s = ∅) → ¬ ∃ x, x ∈ s := by
-  intro x; cases x
-  apply not_exists.mpr
-  intro _ neg
-  exact neg
-
 theorem nonempty_exists {s : Set α} : s ≠ ∅ → ∃ x, x ∈ s := by
   intro s0
   apply Classical.byContradiction
@@ -86,12 +80,23 @@ theorem nonempty_exists {s : Set α} : s ≠ ∅ → ∃ x, x ∈ s := by
   intro a
   exact (iff_false_right fun a => a).mpr (negs a)
 
-theorem empty_not_exists {s : Set α}: (∀ x : α, x ∉ s) → s = ∅ := by
-  intro p
-  apply Classical.byContradiction
-  apply mt nonempty_exists
-  rw [not_exists]
-  exact p
+theorem member_empty {s : Set α}: (s = ∅) ↔ ¬ ∃ x, x ∈ s := by
+  constructor
+  · intro x; cases x
+    apply not_exists.mpr
+    intro _ neg
+    exact neg
+  · intro p
+    apply Classical.byContradiction
+    apply mt nonempty_exists
+    exact p
+
+-- theorem empty_not_exists {s : Set α}: (∀ x : α, x ∉ s) → s = ∅ := by
+--   intro p
+--   apply Classical.byContradiction
+--   apply mt nonempty_exists
+--   rw [not_exists]
+--   exact p
 
 end Set
 

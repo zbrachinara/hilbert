@@ -37,7 +37,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point where
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l : Line point, d ∈ l → c ∉ l →
-    ∃ p : point, p ∈ l ∧ Dichotomy ⟪a ∗ p ∗ c⟫ ⟪b ∗ p ∗ c⟫
+    Dichotomy (∃ p ∈ l, ⟪a ∗ p ∗ c⟫) (∃ p ∈ l, ⟪b ∗ p ∗ c⟫)
 
 def segment {point} [OrderGeometry point] (a b : point) : Set point :=
   {a, b} ∪ {p : point | ⟪a ∗ p ∗ b⟫}

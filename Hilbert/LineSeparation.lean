@@ -20,18 +20,18 @@ private theorem transitivity_lemma {point} [geo : OrderGeometry point]
   have ⟨d, ds⟩ := Set.nonempty_exists neg
   have ⟨dac, dl⟩ := Set.mem_inter.mp ds
   rcases on_segment dac with da | dc | dac
-  · apply Set.member_empty ab
+  · apply Set.member_empty.mp ab
     exact ⟨d, by subst d; exact segment_has_left, dl⟩
-  · apply Set.member_empty bc
+  · apply Set.member_empty.mp bc
     exact ⟨d, by subst d; exact segment_has_right, dl⟩
   rcases Classical.em (b ∈ l) with bl | bnl
-  · apply Set.member_empty ab
+  · apply Set.member_empty.mp ab
     exact ⟨b, segment_has_right, bl⟩
-  have ⟨p, pl, p_through⟩ := geo.pasch noncolinear d dac l dl bnl
-  rcases p_through.either with pab | pcb
-  · apply Set.member_empty ab
+  have pasch_out := geo.pasch noncolinear d dac l dl bnl
+  rcases pasch_out.either with ⟨p, pl, pab⟩ | ⟨p, pl, pcb⟩
+  · apply Set.member_empty.mp ab
     exact ⟨p, by unfold segment; right; exact pab, pl⟩
-  · apply Set.member_empty bc
+  · apply Set.member_empty.mp bc
     exact ⟨p, by unfold segment; right; exact OrderGeometry.order_symmetric pcb, pl⟩
 
 /--
@@ -55,7 +55,8 @@ private theorem line_cut_lemma {point} [OrderGeometry point] (l cut : Line point
   constructor
 
   -- Part 1 -- the segment x p' does not go through the cut
-  apply Set.empty_not_exists
+  apply Set.member_empty.mpr
+  rw [not_exists]
   simp only [Set.mem_inter, mem_line, not_and]
   intro y yxp' ycut
   suffices cut = line x p' by apply xncut; rw [this]; exact line_of_left
@@ -91,7 +92,7 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
 
     have : y ∉ l := by
       intro yl
-      apply (Set.member_empty xy)
+      apply Set.member_empty.mp xy
       exact ⟨y, segment_has_right, yl⟩
     -- TODO maybe I can unpack colinearity instead of using the line specifically between x and y
     have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) l y line_of_right this
@@ -107,9 +108,70 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     have p'y := transitivity_lemma (by rw [segment_symm]; exact yp) yz pnyz
     exact transitivity_lemma xp' p'y pnxz
 
-theorem plane_separation {point} [geo : OrderGeometry point] :
-  ∀ l : Line point, ∀ a b p : point, p ∉ l → (a ⇇ l ⇉ b) → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
-  := by sorry
+/--
+  Similar to the transitivity lemma, proves for noncolinear points that a line will separate a plane
+  into at most two parts, then this result is extended to colinear points using the line cut lemma.
+-/
+private theorem separation_lemma {point} [OrderGeometry point] {a b p : point} {l : Line point}:
+  ¬Colinear a b p → a ∉ l → b ∉ l → p ∉ l → (a ⇇ l ⇉ b) → (p ⇇ l ⇉ a) → (l ⇇ p, b) := by
+
+  intro noncolinear anl bnl pnl lnab lnpa
+  unfold line_sidedness at lnab
+  rw [not_or, Set.member_empty, Classical.not_not] at lnab
+  have ⟨⟨x, xab, xl⟩, _⟩ := lnab
+  unfold line_sidedness at lnpa
+  rw [not_or, Set.member_empty, Classical.not_not] at lnpa
+  have ⟨⟨y, ypa, yl⟩, _⟩ := lnpa
+
+  rcases on_segment xab with xa | xb | xab <;> try subst x -- TODO extract to lemma
+  · exact False.elim (anl xl)
+  · exact False.elim (bnl xl)
+  rcases on_segment ypa with yp | ya | ypa <;> try subst y
+  · exact False.elim (pnl yl)
+  · exact False.elim (anl yl)
+  left
+  apply Set.member_empty.mpr
+  have pasch_out := OrderGeometry.pasch noncolinear x xab l xl pnl
+  intro ⟨t, tpb, tl⟩
+  rcases on_segment tpb with tp | tb | tpb <;> try subst t
+  · exact pnl tl
+  · exact bnl tl
+  apply pasch_out.neg_left
+  · exact ⟨t, tl, OrderGeometry.order_symmetric tpb⟩
+  · exact ⟨y, yl, OrderGeometry.order_symmetric ypa⟩
+
+theorem plane_separation {point} [OrderGeometry point] (l : Line point) (a b p : point):
+  a ∉ l → b ∉ l → p ∉ l → a ⇇ l ⇉ b → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
+  := by
+  intro anl bnl pnl lnab
+  have eq := line_sidedness_is_equivalence l
+  rcases Classical.em (l ⇇ p, a) with lpa | lnpa
+  · left
+    refine ⟨lpa, ?h⟩
+    intro lpb
+    apply lnab
+    exact eq.trans (eq.symm lpa) lpb -- TODO find a way to do inference with calc and symm
+  · right
+    refine ⟨lnpa, ?h⟩
+    rcases Classical.em (Colinear a b p) with colinear | noncolinear
+    rotate_left
+    · exact separation_lemma noncolinear anl bnl pnl lnab lnpa
+    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p (Colinear.contains_right colinear) pnl
+    have pr : l ⇇ p, r := by left; exact prl
+    have rnl : r ∉ l := by
+      intro rl
+      apply Set.member_empty.mp prl
+      exact ⟨r, segment_has_right, rl⟩
+    have : r ⇇ l ⇉ a := by
+      intro neg
+      apply lnpa
+      exact eq.trans pr neg
+
+    suffices l ⇇ r, b by {
+      exact eq.trans pr this
+    }
+    refine separation_lemma ?col anl bnl rnl lnab this
+    exact extralinear_right rnab
 
 theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line_set, ∀ a b c p ∈ l,
   ⟪a ∗ c ∗ b⟫ → p ≠ c → ⟪a ∗ p ∗ c⟫ ∨ ⟪c ∗ p ∗ b⟫
