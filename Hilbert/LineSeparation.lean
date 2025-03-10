@@ -98,11 +98,11 @@ theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
     have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) l y line_of_right this
 
     -- from p' ∉ line_of x y I can derive every noncolinearity necessary
-    have pnxy := extralinear_middle p_extralinear
-    rw [colinear.right_transfers_line] at p_extralinear
-    have pnyz := extralinear_left p_extralinear
-    rw [<- colinear.middle_transfers_line] at p_extralinear
-    have pnxz := extralinear_right p_extralinear
+    have pnxy := extralinear_middle.mp p_extralinear
+    rw [line_symmetric, colinear.right_transfers_line, line_symmetric] at p_extralinear
+    have pnyz := extralinear_left.mp p_extralinear
+    rw [<- colinear.middle_transfers_line, line_symmetric] at p_extralinear
+    have pnxz := extralinear_right.mp p_extralinear
 
     have xp' := transitivity_lemma xy yp pnxy
     have p'y := transitivity_lemma (by rw [segment_symm]; exact yp) yz pnyz
@@ -123,7 +123,7 @@ private theorem separation_lemma {point} [OrderGeometry point] {a b p : point} {
   rw [not_or, Set.member_empty, Classical.not_not] at lnpa
   have ⟨⟨y, ypa, yl⟩, _⟩ := lnpa
 
-  rcases on_segment xab with xa | xb | xab <;> try subst x -- TODO extract to lemma
+  rcases on_segment xab with xa | xb | xab <;> try subst x
   · exact False.elim (anl xl)
   · exact False.elim (bnl xl)
   rcases on_segment ypa with yp | ya | ypa <;> try subst y
@@ -140,7 +140,7 @@ private theorem separation_lemma {point} [OrderGeometry point] {a b p : point} {
   · exact ⟨t, tl, OrderGeometry.order_symmetric tpb⟩
   · exact ⟨y, yl, OrderGeometry.order_symmetric ypa⟩
 
-theorem plane_separation {point} [OrderGeometry point] (l : Line point) (a b p : point):
+theorem plane_separation {point} [OrderGeometry point] {l : Line point} {a b p : point}:
   a ∉ l → b ∉ l → p ∉ l → a ⇇ l ⇉ b → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
   := by
   intro anl bnl pnl lnab
@@ -156,7 +156,7 @@ theorem plane_separation {point} [OrderGeometry point] (l : Line point) (a b p :
     rcases Classical.em (Colinear a b p) with colinear | noncolinear
     rotate_left
     · exact separation_lemma noncolinear anl bnl pnl lnab lnpa
-    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p (Colinear.contains_right colinear) pnl
+    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p (Colinear.contains_right.mp colinear) pnl
     have pr : l ⇇ p, r := by left; exact prl
     have rnl : r ∉ l := by
       intro rl
@@ -170,9 +170,25 @@ theorem plane_separation {point} [OrderGeometry point] (l : Line point) (a b p :
     suffices l ⇇ r, b by {
       exact eq.trans pr this
     }
-    refine separation_lemma ?col anl bnl rnl lnab this
-    exact extralinear_right rnab
+    exact separation_lemma (extralinear_right.mp rnab) anl bnl rnl lnab this
 
-theorem line_separation {point} [geo : OrderGeometry point] : ∀ l ∈ geo.line_set, ∀ a b c p ∈ l,
-  ⟪a ∗ c ∗ b⟫ → p ≠ c → ⟪a ∗ p ∗ c⟫ ∨ ⟪c ∗ p ∗ b⟫
-  := by sorry
+theorem line_separation {point} [geo : OrderGeometry point] {a b c p : point} :
+  ⟪a ∗ c ∗ b⟫ → ⟪a ∗ p ∗ b⟫ → p ≠ c → ⟪a ∗ p ∗ c⟫ ∨ ⟪c ∗ p ∗ b⟫
+  := by
+
+  intro acb apb pnc
+  have ⟨s, snab⟩ := point_of_nontrivial (line a b)
+  have : ∀ p ∈ line a b, p ≠ c → p ∉ line c s := by
+    intro p pl pnc pcs
+    apply snab
+    have : line p c = line a b := by
+      apply line_unique
+      exact pl
+      exact between.contains_middle acb
+    rw [<- this, line_unique pcs line_of_left]
+    exact line_of_right
+  have := plane_separation
+    (this a line_of_left (OrderGeometry.order_irreflexive acb).right.right)
+    (this b line_of_right (Ne.symm (OrderGeometry.order_irreflexive acb).right.left))
+    (this p (between.contains_middle apb) pnc)
+  sorry

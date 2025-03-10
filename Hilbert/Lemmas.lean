@@ -32,6 +32,9 @@ theorem line_of_right : y ∈ geo.line x y := by
   have := this.mpr rfl
   exact this.right
 
+@[simp]
+theorem line_symmetric : geo.line x y = line y x := line_unique line_of_right line_of_left
+
 /--
 If two lines are different, then there must be some point that they do not share.
 -/
@@ -48,22 +51,22 @@ theorem unshared_point: ∀ l l' : Line point, l ≠ l' → ∃ p, p ∈ l ∧ p
     · exact ⟨q, ql, qnl'⟩
   · exact ⟨p, pl, pnl'⟩
 
+/--
+  Consequence of non-triviality of the geometry -- For any line, a point must lie outside that line.
+-/
+theorem point_of_nontrivial (l : Line point) : ∃ p, p ∉ l := by
+  apply Classical.byContradiction
+  rw [not_exists]
+  intro assume_trivial
+  have ⟨a, b, c, noncolinear⟩ := @nontrivial point geo
+  have := assume_trivial a
+  have := assume_trivial b
+  have := assume_trivial c
+  rw [Classical.not_not] at *
+  apply noncolinear
+  exists l
+
 namespace Colinear
-
-theorem contains_left : Colinear x y z → x ∈ geo.line y z := by
-  intro ⟨l, xl, yl, zl⟩
-  rw [line_unique yl zl]
-  exact xl
-
-theorem contains_right : Colinear x y z → z ∈ geo.line x y := by
-  intro ⟨l, xl, yl, zl⟩
-  rw [line_unique xl yl]
-  exact zl
-
-theorem contains_middle : Colinear x y z → y ∈ geo.line x z := by
-  intro ⟨l, xl, yl, zl⟩
-  rw [line_unique xl zl]
-  exact yl
 
 @[simp]
 theorem left_symmetric {x y z : point} : Colinear x y z ↔ Colinear y x z := by
@@ -86,32 +89,38 @@ theorem cross_symmetric {x y z : point} : Colinear x y z ↔ Colinear z y x := b
     exact ⟨l, zl, yl, xl⟩
   }
 
+-- TODO use macro to automate these proofs
+
+theorem contains_left : Colinear x y z ↔ x ∈ geo.line y z := by
+  constructor
+  · intro ⟨l, xl, yl, zl⟩
+    rw [line_unique yl zl]
+    exact xl
+  · intro xl
+    exact ⟨line y z, xl, line_of_left, line_of_right⟩
+theorem contains_middle : Colinear x y z ↔ y ∈ geo.line x z := by
+  rw [left_symmetric]; exact contains_left
+theorem contains_right : Colinear x y z ↔ z ∈ geo.line x y := by
+  rw [right_symmetric]; exact contains_middle
+
 theorem left_transfers_line : Colinear x y z → geo.line x y = geo.line x z := by
   intro col
-  apply line_unique line_of_left (contains_middle col)
-theorem middle_transfers_line : Colinear x y z → geo.line x y = geo.line y z := by
-  intro col
-  apply line_unique (contains_left col) line_of_left
-theorem right_transfers_line : Colinear x y z → geo.line x z = geo.line y z := by
-  intro col
-  apply line_unique (contains_left col) line_of_right
+  exact line_unique line_of_left (contains_middle.mp col)
+theorem middle_transfers_line : Colinear x y z → geo.line y x = geo.line y z := by
+  rw [left_symmetric]; exact left_transfers_line
+theorem right_transfers_line : Colinear x y z → geo.line z x = geo.line z y := by
+  rw [right_symmetric]; exact middle_transfers_line
 
 end Colinear
 
-theorem extralinear_left : a ∉ geo.line b c → ¬ Colinear a b c := by
-  apply mt
-  intro x
-  exact x.contains_left
-
-theorem extralinear_right : c ∉ geo.line a b → ¬ Colinear a b c := by
-  apply mt
-  intro x
-  exact x.contains_right
-
-theorem extralinear_middle : b ∉ geo.line a c → ¬ Colinear a b c := by
-  apply mt
-  intro x
-  exact x.contains_middle
+theorem extralinear_left : a ∉ geo.line b c ↔ ¬ Colinear a b c := by
+  constructor
+  · apply mt; intro x; exact Colinear.contains_left.mp x
+  · apply mt; intro x; exact Colinear.contains_left.mpr x
+theorem extralinear_middle : b ∉ geo.line a c ↔ ¬ Colinear a b c := by
+  rw [Colinear.left_symmetric]; exact extralinear_left
+theorem extralinear_right : c ∉ geo.line a b ↔ ¬ Colinear a b c := by
+  rw [Colinear.right_symmetric]; exact extralinear_middle
 
 end IncidenceLemmas
 
@@ -125,17 +134,17 @@ namespace between
 
 theorem contains_left : ⟪a ∗ b ∗ c⟫ → a ∈ geo.line b c := by
   intro betw
-  apply Colinear.contains_left
+  apply Colinear.contains_left.mp
   exact order_colinear betw
 
 theorem contains_right : ⟪a ∗ b ∗ c⟫ → c ∈ geo.line a b := by
   intro betw
-  apply Colinear.contains_right
+  apply Colinear.contains_right.mp
   exact order_colinear betw
 
 theorem contains_middle : ⟪a ∗ b ∗ c⟫ → b ∈ geo.line a c := by
   intro betw
-  apply Colinear.contains_middle
+  apply Colinear.contains_middle.mp
   exact order_colinear betw
 
 end between
