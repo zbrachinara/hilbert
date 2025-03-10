@@ -23,37 +23,32 @@ def neg_right : a → ¬ b := by
 
 end Dichotomy
 
-def Trichotomy (a b c : Prop) : Prop := (a ∧ b ∧ ¬ c) ∨ (a ∧ ¬ b ∧ c) ∨ (¬ a ∧ b ∧ c)
+def Trichotomy (a b c : Prop) : Prop := (a ∧ ¬ b ∧ ¬ c) ∨ (¬ a ∧ b ∧ ¬ c) ∨ (¬ a ∧ ¬ b ∧ c)
 
 namespace Trichotomy
 
 variable (tri : Trichotomy a b c)
 
 def any : a ∨ b ∨ c := by
-  rcases tri with ⟨t, _, _⟩ | ⟨_, _, t⟩ | ⟨_, _, t⟩
+  rcases tri with ⟨t, _, _⟩ | ⟨_, t, _⟩ | ⟨_, _, t⟩
   · left; exact t
-  · right; right; exact t
+  · right; left; exact t
   · right; right; exact t
 
-def reduce_left : a → Dichotomy b c := by
+-- TODO rewrite using symmetry
+def reduce_left : a → ¬ b ∧ ¬ c := by
   intro a
-  rcases tri with ⟨_, l⟩ | ⟨_, r⟩ | ⟨f, _⟩
-  · left; exact l
-  · right; exact r
-  · exact False.elim (f a)
+  rcases tri with ⟨_, t⟩ | ⟨f, _⟩ | ⟨f, _⟩ <;> try exact False.elim (f a)
+  exact t
 
-def reduce_right : c → Dichotomy a b := by
+def reduce_right : c → ¬ a ∧ ¬ b := by
   intro c
-  rcases tri with ⟨_, _, f⟩ | ⟨l₁, l₂, _⟩ | ⟨r₁, r₂, _⟩
-  · exact False.elim (f c)
-  · left; exact ⟨l₁, l₂⟩
-  · right; exact ⟨r₁, r₂⟩
+  rcases tri with ⟨_, _, f⟩ | ⟨_, _, f⟩ | ⟨a, b, _⟩ <;> try  exact False.elim (f c)
+  exact ⟨a, b⟩
 
-def reduce_middle : b → Dichotomy a c := by
+def reduce_middle : b → ¬ a ∧ ¬ c := by
   intro b
-  rcases tri with ⟨l₁, _, l₂⟩ | ⟨_, f, _⟩ | ⟨r₁, _, r₂⟩
-  · left; exact ⟨l₁, l₂⟩
-  · exact False.elim (f b)
-  · right; exact ⟨r₁, r₂⟩
+  rcases tri with ⟨_, f, _⟩ | ⟨a, _, c⟩ | ⟨_, f, _⟩ <;> try exact False.elim (f b)
+  · exact ⟨a, c⟩
 
 end Trichotomy

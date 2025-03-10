@@ -17,7 +17,7 @@ structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
 
 class IncidenceGeometry (point : Type) extends Geometry point where
   line (x y : point) : Line point
-  line_uniqueness : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ line x y = l'
+  line_uniqueness : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ line x y = l' -- TODO add nontriviality -- x ≠ y
   line_nonempty : ∀ l : Line point, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
   nontrivial : ∃ a b c : point, ¬ Colinear a b c
 
@@ -25,10 +25,11 @@ export IncidenceGeometry (line)
 
 def line_locus {point} [IncidenceGeometry point] (x y : point) := (line x y).val
 
-structure between (a b c : point) : Prop
-notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => between a b c
+class Betweenness {α : Type} where
+  between : α → α → α → Prop
+notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => Betweenness.between a b c
 
-class OrderGeometry (point : Type) extends IncidenceGeometry point where
+class OrderGeometry (point : Type) extends IncidenceGeometry point, @Betweenness point where
   order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c

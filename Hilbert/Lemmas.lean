@@ -54,7 +54,7 @@ theorem unshared_point: ∀ l l' : Line point, l ≠ l' → ∃ p, p ∈ l ∧ p
 /--
   Consequence of non-triviality of the geometry -- For any line, a point must lie outside that line.
 -/
-theorem point_of_nontrivial (l : Line point) : ∃ p, p ∉ l := by
+theorem not_colinear_to (l : Line point) : ∃ p, p ∉ l := by
   apply Classical.byContradiction
   rw [not_exists]
   intro assume_trivial
@@ -171,16 +171,22 @@ theorem order_symmetric': ∀ p q r : point, ⟪p ∗ q ∗ r⟫ ↔ ⟪r ∗ q 
   constructor <;> { intro x; exact order_symmetric x }
 
 @[simp]
-theorem on_segment {p a b: point} : p ∈ segment a b → p = a ∨ p = b ∨ ⟪a ∗ p ∗ b⟫ := by
-  unfold segment
-  simp [Set.insert, Set.member]
-  intro pab
-  cases pab
-  case inl ab =>
-    cases ab
-    · left; assumption
-    · right; left; assumption
-  right; right; simp only [*]
+theorem on_segment {p a b: point} : p ∈ segment a b ↔ p = a ∨ p = b ∨ ⟪a ∗ p ∗ b⟫ := by
+  constructor
+  · unfold segment
+    simp [Set.insert, Set.member]
+    intro pab
+    cases pab
+    case inl ab =>
+      cases ab
+      · left; assumption
+      · right; left; assumption
+    right; right; simp only [*]
+  · unfold segment
+    rintro (pa | pb | pab) <;> try subst p
+    · left; simp [Set.insert]; left; rfl
+    · left; simp [Set.insert]; right; rfl
+    · right; exact pab
 
 theorem segment_has_left {a b : point} : a ∈ segment a b := by
   unfold segment
@@ -213,7 +219,7 @@ theorem segment_symm : ∀ p q : point, segment p q = segment q p := by
 theorem segment_in_line {p q : point} : segment p q ⊆ line p q := by
   unfold Set.subset
   intro p pab
-  rcases on_segment pab with pa | pb | pab
+  rcases on_segment.mp pab with pa | pb | pab
     <;> try {subst p; simp only [line_of_left, line_of_right, mem_line]}
   have ⟨l, al, pl, bl⟩ := order_colinear pab
   rw [line_unique al bl]
