@@ -32,7 +32,8 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point, @Betweenness
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c
   extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫ -- TODO make this constructive
-  order_unique : ∀ {a b c : point}, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫ -- TODO points need to be unique
+  order_unique : ∀ {a b c : point}, a ≠ b → b ≠ c → a ≠ c → Colinear a b c →
+    Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l : Line point, d ∈ l → c ∉ l →

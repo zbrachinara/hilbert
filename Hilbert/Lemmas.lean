@@ -174,13 +174,13 @@ theorem contains_middle : ⟪a ∗ b ∗ c⟫ → b ∈ geo.line a c := by
 theorem exclusive_left {a b c : point}: ⟪a ∗ b ∗ c⟫ → ¬ ⟪b ∗ a ∗ c⟫ := by
   intro abc
   have := order_colinear abc
-  have := (order_unique this).reduce_left abc
+  have := (order_unique abc.left_irrefl abc.right_irrefl abc.cross_irrefl this).reduce_left abc
   exact this.left
 
 theorem exclusive_right {a b c : point} : ⟪a ∗ b ∗ c⟫ → ¬ ⟪a ∗ c ∗ b⟫ := by
   intro abc
   have := order_colinear abc
-  have := (order_unique this).reduce_left abc
+  have := (order_unique abc.left_irrefl abc.right_irrefl abc.cross_irrefl this).reduce_left abc
   exact this.right
 
 theorem outside_segment {a b c : point} : ⟪a ∗ b ∗ c⟫ → a ∉ segment b c := by
@@ -189,8 +189,7 @@ theorem outside_segment {a b c : point} : ⟪a ∗ b ∗ c⟫ → a ∉ segment 
   · exact abc.left_irrefl ab
   · exact abc.cross_irrefl ac
   exfalso
-  have := (order_unique (order_colinear abc)).reduce_left abc
-  exact this.left anbc
+  exact abc.exclusive_left anbc
 
 end Betweenness.between
 
