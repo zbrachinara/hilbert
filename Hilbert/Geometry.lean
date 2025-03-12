@@ -17,13 +17,11 @@ structure Colinear {point} [geo : Geometry point] (a b c : point) : Prop where
 
 class IncidenceGeometry (point : Type) extends Geometry point where
   line (x y : point) : Line point
-  line_uniqueness : ∀ x y : point, ∀ l' : Line point, x ∈ l' ∧ y ∈ l' ↔ line x y = l' -- TODO add nontriviality -- x ≠ y
-  line_nonempty : ∀ l : Line point, ∃ x y ∈ point, x ≠ y ∧ x ∈ l ∧ y ∈ l
+  line_uniqueness {x y : point} {l' : Line point} (xny : x ≠ y) : (x ∈ l' ∧ y ∈ l' ↔ line x y = l')
+  line_nonempty : ∀ l : Line point, ∃ x y : point, x ≠ y ∧ line x y = l
   nontrivial : ∃ a b c : point, ¬ Colinear a b c
 
 export IncidenceGeometry (line)
-
-def line_locus {point} [IncidenceGeometry point] (x y : point) := (line x y).val
 
 class Betweenness {α : Type} where
   between : α → α → α → Prop
@@ -34,7 +32,7 @@ class OrderGeometry (point : Type) extends IncidenceGeometry point, @Betweenness
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c
   extension : ∀ a b : point, ∃ c : point, ⟪a ∗ b ∗ c⟫ -- TODO make this constructive
-  order_unique : ∀ a b c : point, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
+  order_unique : ∀ {a b c : point}, Colinear a b c → Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫ -- TODO points need to be unique
   pasch {a b c : point} : ¬ Colinear a b c →
     ∀ d : point, ⟪a ∗ d ∗ b⟫ →
     ∀ l : Line point, d ∈ l → c ∉ l →

@@ -51,6 +51,8 @@ private theorem line_cut_lemma {point} [OrderGeometry point] (l cut : Line point
 
   have ⟨p, pcut, pnl⟩ := unshared_point cut l lncut
   have ⟨p', pxp'⟩ := OrderGeometry.extension p x
+  have xnp' : x ≠ p' := by intro p'x; exact pxp'.right_irrefl p'x
+
   exists p'
   constructor
 
@@ -59,50 +61,65 @@ private theorem line_cut_lemma {point} [OrderGeometry point] (l cut : Line point
   rw [not_exists]
   simp only [Set.mem_inter, mem_line, not_and]
   intro y yxp' ycut
-  suffices cut = line x p' by apply xncut; rw [this]; exact line_of_left
+  suffices cut = line x p' by apply xncut; rw [this]; apply line_of_left; exact pxp'.right_irrefl
+  have pny : p ≠ y := by intro py; subst p; exact pxp'.outside_segment yxp'
   calc
-    cut = line p y := by symm; exact line_unique pcut ycut
-    _ = line x p' := line_unique (between.contains_left pxp') (segment_in_line y yxp')
+    cut = line p y := by symm; exact line_unique pny pcut ycut
+    line p y = line x p' := line_unique pny (pxp'.contains_left) (segment_in_line xnp' y yxp')
 
   -- Part 2 -- p' doesn't lie with x
   intro neg
   apply pnl
-  rw [<- line_unique xl neg]
-  exact between.contains_left pxp'
+  rw [<- line_unique xnp' xl neg]
+  exact pxp'.contains_left
+
+theorem line_sidedness_symmetric {point} [OrderGeometry point] {a b : point} :
+  ∀ l : Line point, l ⇇ a, b → l ⇇ b, a := by
+  intro l xy; cases xy
+  · left; rw [segment_symm]; assumption
+  · right; symm; assumption
 
 theorem line_sidedness_is_equivalence {point} [OrderGeometry point] :
   ∀ l : Line point, Equivalence (line_sidedness l) := by
-  intro l
+  intro cut
   constructor
   · intro x; right; rfl
-  · intro x y xy; cases xy
-    · left; rw [segment_symm]; assumption
-    · right; symm; assumption
+  · exact line_sidedness_symmetric cut
   · intro x y z xy yz
 
+    -- Remove trivial equalities
+    rcases Classical.em (x = y) with xy | xny
+    · subst x; exact yz
+    rcases Classical.em (y = z) with yz | ynz
+    · subst y; exact xy
+    rcases Classical.em (x = z) with xz | xnz
+    · right; exact xz
+    rw [<- Ne] at *
     -- Discharge trivial cases
     rcases xy; case inr t => rw [t]; assumption
     case inl xy =>
     left
-    cases yz; case inr t => rw [<- t]; assumption
+    cases yz
+    case inr t => rw [<- t]; assumption
     case inl yz =>
 
     refine Classical.byCases ?false (transitivity_lemma xy yz)
     intro colinear
 
-    have : y ∉ l := by
+    have : y ∉ cut := by
       intro yl
       apply Set.member_empty.mp xy
       exact ⟨y, segment_has_right, yl⟩
     -- TODO maybe I can unpack colinearity instead of using the line specifically between x and y
-    have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) l y line_of_right this
+    have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) cut y (line_of_right xny) this
 
     -- from p' ∉ line_of x y I can derive every noncolinearity necessary
-    have pnxy := extralinear_middle.mp p_extralinear
-    rw [line_symmetric, colinear.right_transfers_line, line_symmetric] at p_extralinear
-    have pnyz := extralinear_left.mp p_extralinear
-    rw [<- colinear.middle_transfers_line, line_symmetric] at p_extralinear
-    have pnxz := extralinear_right.mp p_extralinear
+    have pnxy := (extralinear_middle xny).mp p_extralinear
+    rw [line_symmetric xny, colinear.right_transfers_line xny.symm ynz, line_symmetric ynz]
+      at p_extralinear
+    have pnyz := (extralinear_left ynz.symm).mp p_extralinear
+    rw [<- colinear.middle_transfers_line xnz.symm ynz.symm, line_symmetric xnz.symm] at p_extralinear
+    have pnxz := (extralinear_right xnz).mp p_extralinear
 
     have xp' := transitivity_lemma xy yp pnxy
     have p'y := transitivity_lemma (by rw [segment_symm]; exact yp) yz pnyz
@@ -144,6 +161,12 @@ theorem plane_separation {point} [OrderGeometry point] {l : Line point} {a b p :
   a ∉ l → b ∉ l → p ∉ l → a ⇇ l ⇉ b → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
   := by
   intro anl bnl pnl lnab
+
+  have anb : a ≠ b := by
+    unfold line_sidedness at lnab
+    rw [not_or] at lnab
+    exact lnab.right
+
   have eq := line_sidedness_is_equivalence l
   rcases Classical.em (l ⇇ p, a) with lpa | lnpa
   · left
@@ -156,7 +179,7 @@ theorem plane_separation {point} [OrderGeometry point] {l : Line point} {a b p :
     rcases Classical.em (Colinear a b p) with colinear | noncolinear
     rotate_left
     · exact separation_lemma noncolinear anl bnl pnl lnab lnpa
-    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p (Colinear.contains_right.mp colinear) pnl
+    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p ((Colinear.contains_right anb).mp colinear) pnl
     have pr : l ⇇ p, r := by left; exact prl
     have rnl : r ∉ l := by
       intro rl
@@ -168,9 +191,9 @@ theorem plane_separation {point} [OrderGeometry point] {l : Line point} {a b p :
       exact eq.trans pr neg
 
     suffices l ⇇ r, b from eq.trans pr this
-    exact separation_lemma (extralinear_right.mp rnab) anl bnl rnl lnab this
+    exact separation_lemma ((extralinear_right anb).mp rnab) anl bnl rnl lnab this
 
-namespace between
+namespace Betweenness.between
 
 @[simp]
 theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
@@ -182,19 +205,21 @@ theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
   have ⟨l', _, _, dl⟩ := OrderGeometry.order_colinear bcd
   have ⟨s, snl⟩ := not_colinear_to l
   have : l = l' := by calc
-    l = line b c := by symm; apply line_unique bl cl
-    line b c = l' := by apply line_unique <;> assumption
+    l = line b c := by symm; apply line_unique abc.right_irrefl bl cl
+    line b c = l' := by apply line_unique abc.right_irrefl <;> assumption
   subst this
+
+  have bns : b ≠ s := by intro bs; subst b; exact snl bl
 
   have unique_intersection : ∀ p ∈ l, p ≠ b → p ∉ line b s := by
     intro p pl pnb pbs
     apply snl
-    rw [<- line_unique pl bl, line_unique pbs line_of_left]
-    exact line_of_right
+    rw [<- line_unique pnb pl bl, line_unique pnb pbs (line_of_left bns)]
+    exact line_of_right bns
 
-  have anl := (unique_intersection a al (OrderGeometry.order_irreflexive abc).right.right) -- TODO add these as lemmas
-  have cnl := (unique_intersection c cl (OrderGeometry.order_irreflexive abc).right.left.symm)
-  have dnl := (unique_intersection d dl (OrderGeometry.order_irreflexive bcd).left.symm)
+  have anl := (unique_intersection a al abc.left_irrefl) -- TODO add these as lemmas
+  have cnl := (unique_intersection c cl abc.right_irrefl.symm)
+  have dnl := (unique_intersection d dl bcd.cross_irrefl.symm)
 
   have separated := plane_separation anl cnl dnl
     (by
@@ -203,7 +228,7 @@ theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
       · rw [Set.member_empty]
         simp
         intro _ _
-        exact ⟨b, abc, line_of_left⟩
+        exact ⟨b, abc, line_of_left bns⟩
       · exact (OrderGeometry.order_irreflexive abc).left
     )
 
@@ -218,17 +243,23 @@ theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
     · subst x; exact dnl xbs
     · subst x; exact cnl xbs
     apply snl
-    suffices (l = line b s ) by rw [this]; exact line_of_right
+    suffices (l = line b s ) by rw [this]; exact line_of_right bns
     symm
+    have bnx : b ≠ x := by
+      intro bx
+      subst x
+      apply bcd.exclusive_left
+      exact dxc.symm
     calc
-      line b s = line b x := by symm; exact line_unique line_of_left xbs
+      line b s = line b x := by symm; exact line_unique bnx (line_of_left bns) xbs
       line b x = line d c := by
         apply line_unique
-        rw [line_symmetric]
-        exact contains_left bcd
-        apply contains_middle
-        exact dxc
-      line d c = l := line_unique dl cl
+        · exact bnx
+        · rw [line_symmetric bcd.right_irrefl.symm]
+          exact bcd.contains_left
+        · apply contains_middle
+          exact dxc
+      line d c = l := line_unique bcd.right_irrefl.symm dl cl
 
   have := separated.neg_left this
 
@@ -236,7 +267,7 @@ theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
 
   unfold line_sidedness at this
   rw [not_or, Set.member_empty, Classical.not_not] at this
-  have ⟨⟨x, xda, xbs⟩, _⟩ := this
+  have ⟨⟨x, xda, xbs⟩, dna⟩ := this
   rcases on_segment.mp xda with xd | xa | xda <;> try subst x
   · exact False.elim (dnl xbs)
   · exact False.elim (anl xbs)
@@ -245,7 +276,7 @@ theorem quasitransitive_left [OrderGeometry point] {a b c d : point} :
   intro xnb -- TODO will need this when making incidence axioms more precise
   have := unique_intersection x ?h xnb
   exact this xbs
-  rw [<- line_unique dl al]
+  rw [<- line_unique dna dl al]
   exact contains_middle xda
 
-end between
+end Betweenness.between
