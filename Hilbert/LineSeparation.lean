@@ -79,27 +79,24 @@ theorem line_cut_lemma (l cut : Line point) :
 
   have ⟨p, pcut, pnl⟩ := unshared_point cut l lncut
   have ⟨p', pxp'⟩ := OrderGeometry.extension p x
-  have xnp' : x ≠ p' := by intro p'x; exact pxp'.right_irrefl p'x
 
   exists p'
   constructor
-
   -- Part 1 -- the segment x p' does not go through the cut
-  apply Set.member_empty.mpr
-  rw [not_exists]
-  simp only [Set.mem_inter, mem_line, not_and]
-  intro y yxp' ycut
-  suffices cut = line x p' by apply xncut; rw [this]; exact line_of_left pxp'.right_irrefl
-  have pny : p ≠ y := by intro py; subst p; exact pxp'.outside_segment yxp'
-  calc
-    cut = line p y := by symm; exact line_unique pny pcut ycut
-    line p y = line x p' := line_unique pny (pxp'.contains_left) (segment_in_line xnp' y yxp')
-
+  · apply Set.member_empty.mpr
+    rw [not_exists]
+    simp only [Set.mem_inter, mem_line, not_and]
+    intro y yxp' ycut
+    suffices cut = line x p' pxp'.right_irrefl by apply xncut; rw [this]; exact line_of_left
+    have pny : p ≠ y := by intro py; subst p; exact pxp'.outside_segment yxp'
+    calc
+      cut = line p y _ := by symm; exact line_unique pny pcut ycut
+      line p y _ = line x p' _ := line_unique pny (pxp'.contains_left) (segment_in_line y yxp')
   -- Part 2 -- p' doesn't lie with x
-  intro neg
-  apply pnl
-  rw [<- line_unique xnp' xl neg]
-  exact pxp'.contains_left
+  · intro neg
+    apply pnl
+    rw [<- line_unique pxp'.right_irrefl xl neg]
+    exact pxp'.contains_left
 
 theorem line_sidedness_symmetric {a b : point} : ∀ l : Line point, l ⇇ a, b → l ⇇ b, a := by
   intro l xy; cases xy
@@ -133,14 +130,14 @@ theorem line_sidedness_transitive {x y z : point} : ∀ l : Line point,
     apply Set.member_empty.mp xy
     exact ⟨y, segment_has_right, yl⟩
   -- TODO maybe I can unpack colinearity instead of using the line specifically between x and y
-  have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) cut y (line_of_right xny) this
+  have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y xny) cut y line_of_right this
 
   -- from p' ∉ line_of x y I can derive every noncolinearity necessary
   have pnxy := (extralinear_middle xny).mp p_extralinear
-  rw [line_symmetric xny, colinear.right_transfers_line xny.symm ynz, line_symmetric ynz]
+  rw [line_symmetric, colinear.right_transfers_line xny.symm ynz, line_symmetric]
     at p_extralinear
   have pnyz := (extralinear_left ynz.symm).mp p_extralinear
-  rw [<- colinear.middle_transfers_line xnz.symm ynz.symm, line_symmetric xnz.symm] at p_extralinear
+  rw [<- colinear.middle_transfers_line xnz.symm ynz.symm, line_symmetric] at p_extralinear
   have pnxz := (extralinear_right xnz).mp p_extralinear
 
   have xp' := transitivity_lemma xy yp pnxy
@@ -200,7 +197,7 @@ theorem plane_separation {l : Line point} {a b p : point}:
     rcases Classical.em (Colinear a b p) with colinear | noncolinear
     rotate_left
     · exact separation_lemma noncolinear anl bnl pnl lnab lnpa
-    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p ((Colinear.contains_right anb).mp colinear) pnl
+    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b anb) l p ((Colinear.contains_right anb).mp colinear) pnl
     have pr : l ⇇ p, r := by left; exact prl
     have rnl : r ∉ l := by
       intro rl
@@ -224,17 +221,17 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
   have ⟨l', _, _, dl⟩ := OrderGeometry.order_colinear bcd
   have ⟨s, snl⟩ := not_colinear_to l
   have : l = l' := by calc
-    l = line b c := by symm; apply line_unique abc.right_irrefl bl cl
-    line b c = l' := by apply line_unique abc.right_irrefl <;> assumption
+    l = line b c _ := by symm; apply line_unique abc.right_irrefl bl cl
+    line b c _ = l' := by apply line_unique abc.right_irrefl <;> assumption
   subst this
 
   have bns : b ≠ s := by intro bs; subst b; exact snl bl
 
-  have unique_intersection : ∀ p ∈ l, p ≠ b → p ∉ line b s := by
+  have unique_intersection : ∀ p ∈ l, p ≠ b → p ∉ line b s bns := by
     intro p pl pnb pbs
     apply snl
-    rw [<- line_unique pnb pl bl, line_unique pnb pbs (line_of_left bns)]
-    exact line_of_right bns
+    rw [<- line_unique pnb pl bl, line_unique pnb pbs line_of_left]
+    exact line_of_right
 
   have anl := (unique_intersection a al abc.left_irrefl)
   have cnl := (unique_intersection c cl abc.right_irrefl.symm)
@@ -246,11 +243,11 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
     · rw [Set.member_empty]
       simp
       intro _ _
-      exact ⟨b, abc, line_of_left bns⟩
+      exact ⟨b, abc, line_of_left⟩
     · exact (OrderGeometry.order_irreflexive abc).left
   )
 
-  have : line b s ⇇ d, c := by
+  have : line b s bns ⇇ d, c := by
     left
     apply Classical.byContradiction
     intro neg
@@ -261,7 +258,7 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
     · subst x; exact dnl xbs
     · subst x; exact cnl xbs
     apply snl
-    suffices (l = line b s ) by rw [this]; exact line_of_right bns
+    suffices (l = line b s bns) by rw [this]; exact line_of_right
     symm
     have bnx : b ≠ x := by
       intro bx
@@ -269,15 +266,14 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
       apply bcd.exclusive_left
       exact dxc.symm
     calc
-      line b s = line b x := by symm; exact line_unique bnx (line_of_left bns) xbs
-      line b x = line d c := by
+      line b s _ = line b x _ := by symm; exact line_unique bnx line_of_left xbs
+      line b x _ = line d c _ := by
         apply line_unique
-        · exact bnx
-        · rw [line_symmetric bcd.right_irrefl.symm]
+        · rw [line_symmetric]
           exact bcd.contains_left
         · apply contains_middle
           exact dxc
-      line d c = l := line_unique bcd.right_irrefl.symm dl cl
+      line d c _ = l := line_unique bcd.right_irrefl.symm dl cl
 
   have := separated.neg_left this
   rw [<- cut_apart] at this
