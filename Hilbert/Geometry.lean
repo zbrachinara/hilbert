@@ -23,11 +23,11 @@ class IncidenceGeometry (point : Type) extends Geometry point where
 
 export IncidenceGeometry (line)
 
-class Betweenness {α : Type} where
+class PointOrder (α : Type) where
   between : α → α → α → Prop
-notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => Betweenness.between a b c
+notation (name := order_relation) "⟪" a " ∗ " b " ∗ " c "⟫" => PointOrder.between a b c
 
-class OrderGeometry (point : Type) extends IncidenceGeometry point, @Betweenness point where
+class OrderGeometry (point : Type) extends IncidenceGeometry point, PointOrder point where
   order_symmetric : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → ⟪c ∗ b ∗ a⟫
   order_irreflexive : ∀ {a b c : point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c

@@ -16,8 +16,7 @@ section IncidenceLemmas
 variable {point} [geo : IncidenceGeometry point]
 
 @[simp]
-theorem line_unique {x y : point} {l : Line point} (xny : x ≠ y) :
-  x ∈ l → y ∈ l → line x y xny = l := by
+theorem line_unique {l : Line point} (xny : x ≠ y) : x ∈ l → y ∈ l → line x y xny = l := by
   rw [<- and_imp]
   apply (line_uniqueness xny).mp
 
@@ -145,7 +144,7 @@ theorem on_segment {p a b: point} : p ∈ segment a b ↔ p = a ∨ p = b ∨ �
     · left; simp [Set.insert]; right; rfl
     · right; exact pab
 
-namespace Betweenness.between
+namespace PointOrder.between
 
 @[simp]
 theorem left_irrefl {a b c : point} (abc : ⟪a ∗ b ∗ c⟫) : a ≠ b :=
@@ -189,7 +188,7 @@ theorem outside_segment {a b c : point} : ⟪a ∗ b ∗ c⟫ → a ∉ segment 
   exfalso
   exact abc.exclusive_left anbc
 
-end Betweenness.between
+end PointOrder.between
 
 @[simp]
 theorem trivial_nonorder : ∀ p p': point, ¬ ⟪p ∗ p' ∗ p⟫ := by

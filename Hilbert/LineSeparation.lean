@@ -129,10 +129,9 @@ theorem line_sidedness_transitive {x y z : point} : ∀ l : Line point,
     intro yl
     apply Set.member_empty.mp xy
     exact ⟨y, segment_has_right, yl⟩
-  -- TODO maybe I can unpack colinearity instead of using the line specifically between x and y
   have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y xny) cut y line_of_right this
 
-  -- from p' ∉ line_of x y I can derive every noncolinearity necessary
+  -- because `p' ∉ line x y`, it also is not colinear with any of the other lines.
   have pnxy := (extralinear_middle xny).mp p_extralinear
   rw [line_symmetric, colinear.right_transfers_line xny.symm ynz, line_symmetric]
     at p_extralinear
