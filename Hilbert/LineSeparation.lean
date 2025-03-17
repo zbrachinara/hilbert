@@ -11,11 +11,10 @@ variable {point} [OrderGeometry point]
 def cut_together (cut : Line point) (p q : point) := (segment p q) ∩ cut = ∅ ∨ p = q
 /--
   Two points are on the opposite sides of a cut when the segment through them intsersects the cut.
-  This is the exact negation of `cut_together`, and is defined as such.
+  This is the negation of `cut_together`.
 -/
 def cut_apart (cut : Line point) (p q : point) := ¬ cut_together cut p q
 
--- TODO workshop notation, doesn't look good without parentheses
 @[inherit_doc] notation l " ⇇ " x:40 ", " y:40 => cut_together l x y
 @[inherit_doc] notation x " ⇇ " l " ⇉ " y:40 => cut_apart l x y
 
@@ -38,7 +37,8 @@ theorem irreflexive {a b : point} : a ⇇ cut ⇉ b → a ≠ b := by
 end cut_apart
 
 /--
-  Transitivity of line-sidedness, but specifically needs noncolinear points.
+Transitivity of line-sidedness, but specifically needs noncolinear points. This result is then
+extended to include colinear points with line_cut_lemma
 -/
 private theorem transitivity_lemma {a b c : point} {l : Line point}:
   segment a b ∩ l = ∅ → segment b c ∩ l = ∅ → ¬Colinear a c b → segment a c ∩ l = ∅ := by
@@ -151,8 +151,8 @@ theorem line_sidedness_is_equivalence : ∀ l : Line point, Equivalence (cut_tog
   · exact line_sidedness_symmetric cut
   · exact line_sidedness_transitive cut
 /--
-  Similar to the transitivity lemma, proves for noncolinear points that a line will separate a plane
-  into at most two parts, then this result is extended to colinear points using the line cut lemma.
+  A cut will separate noncolinear points (that are not on the cut) into at most two parts. Similar
+  to the transitivity lemma, this theorem is then extended to colinear points using line_cut_lemma.
 -/
 private theorem separation_lemma {a b p : point} {l : Line point}:
   ¬Colinear a b p → a ∉ l → b ∉ l → p ∉ l → (a ⇇ l ⇉ b) → (p ⇇ l ⇉ a) → (l ⇇ p, b) := by
@@ -178,6 +178,10 @@ private theorem separation_lemma {a b p : point} {l : Line point}:
   · exact ⟨t, tl, tpb.symm⟩
   · exact ⟨y, yl, ypa.symm⟩
 
+/--
+Two points separated by a cut are the representatives of the two equivalence classes representing
+points on the same side of the cut.
+-/
 theorem plane_separation {l : Line point} {a b p : point}:
   a ∉ l → b ∉ l → p ∉ l → a ⇇ l ⇉ b → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
   := by
@@ -289,5 +293,12 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
   exact this xbs
   rw [<- line_unique dna dl al]
   exact contains_middle xda
+
+@[simp]
+theorem quasitransitive_right {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ c ∗ d⟫ := by
+  intros
+  rw [order_symmetric'] at *
+  apply quasitransitive_left
+  all_goals assumption
 
 end Betweenness.between
