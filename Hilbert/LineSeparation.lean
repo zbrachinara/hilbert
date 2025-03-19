@@ -1,26 +1,26 @@
 import Hilbert.Geometry
 import Hilbert.Lemmas
 
-variable {point} [OrderGeometry point]
+variable {geo} [OrderGeometry geo]
 
 /--
   Two points are on the same side of a cut if the segment through the points does not intersect the
   cut. Two points are also consdiered on the same side of the cut if they are equal (for
   reflexivity), so any point on the cut is together with itself, but not with any other point.
 -/
-def cut_together (cut : Line point) (p q : point) := (segment p q) ∩ cut = ∅ ∨ p = q
+def cut_together (cut : Line geo) (p q : geo.point) := (segment p q) ∩ cut = ∅ ∨ p = q
 /--
   Two points are on the opposite sides of a cut when the segment through them intsersects the cut.
   This is the negation of `cut_together`.
 -/
-def cut_apart (cut : Line point) (p q : point) := ¬ cut_together cut p q
+def cut_apart (cut : Line geo) (p q : geo.point) := ¬ cut_together cut p q
 
 @[inherit_doc] notation l " ⇇ " x:40 ", " y:40 => cut_together l x y
 @[inherit_doc] notation x " ⇇ " l " ⇉ " y:40 => cut_apart l x y
 
 namespace cut_apart
 
-theorem defn {a b : point} : a ⇇ cut ⇉ b → (∃ p, p ∈ segment a b ∧ p ∈ cut) ∧ (a ≠ b) := by
+theorem defn {a b : geo.point} : a ⇇ cut ⇉ b → (∃ p, p ∈ segment a b ∧ p ∈ cut) ∧ (a ≠ b) := by
   intro separated
   unfold cut_apart at separated
   unfold cut_together at separated
@@ -28,10 +28,10 @@ theorem defn {a b : point} : a ⇇ cut ⇉ b → (∃ p, p ∈ segment a b ∧ p
   exact separated
 
 @[simp]
-theorem intersects_cut {a b : point} : a ⇇ cut ⇉ b → ∃ p, p ∈ segment a b ∧ p ∈ cut := by
+theorem intersects_cut {a b : geo.point} : a ⇇ cut ⇉ b → ∃ p, p ∈ segment a b ∧ p ∈ cut := by
   intro separated; exact separated.defn.left
 @[simp]
-theorem irreflexive {a b : point} : a ⇇ cut ⇉ b → a ≠ b := by
+theorem irreflexive {a b : geo.point} : a ⇇ cut ⇉ b → a ≠ b := by
   intro separated; exact separated.defn.right
 
 end cut_apart
@@ -40,7 +40,7 @@ end cut_apart
 Transitivity of line-sidedness, but specifically needs noncolinear points. This result is then
 extended to include colinear points with line_cut_lemma
 -/
-private theorem transitivity_lemma {a b c : point} {l : Line point}:
+private theorem transitivity_lemma {a b c : geo.point} {l : Line geo} :
   segment a b ∩ l = ∅ → segment b c ∩ l = ∅ → ¬Colinear a c b → segment a c ∩ l = ∅ := by
   intro ab bc noncolinear
   apply Classical.byContradiction
@@ -70,7 +70,7 @@ private theorem transitivity_lemma {a b c : point} {l : Line point}:
   side of a cut as these points. It also has the quirk of accepting cases in which the line is the
   same as the cut. In this case, this theorem is vacuously true.
  -/
-theorem line_cut_lemma (l cut : Line point) :
+theorem line_cut_lemma [IncidenceGeometry geo] (l cut : Line geo) :
   ∀ x ∈ l, x ∉ cut → ∃ p, segment x p ∩ cut = ∅ ∧ p ∉ l := by
   intro x xl xncut
   rcases Classical.em (cut = l) with lcut | lncut
@@ -98,12 +98,12 @@ theorem line_cut_lemma (l cut : Line point) :
     rw [<- line_unique pxp'.right_irrefl xl neg]
     exact pxp'.contains_left
 
-theorem line_sidedness_symmetric {a b : point} : ∀ l : Line point, l ⇇ a, b → l ⇇ b, a := by
+theorem line_sidedness_symmetric : ∀ l : Line geo, l ⇇ a, b → l ⇇ b, a := by
   intro l xy; cases xy
   · left; rw [segment_symm]; assumption
   · right; symm; assumption
 
-theorem line_sidedness_transitive {x y z : point} : ∀ l : Line point,
+theorem line_sidedness_transitive [IncidenceGeometry geo] : ∀ l : Line geo,
   l ⇇ x, y → l ⇇ y, z → l ⇇ x, z := by
   intro cut xy yz
   -- Remove trivial equalities
@@ -143,7 +143,8 @@ theorem line_sidedness_transitive {x y z : point} : ∀ l : Line point,
   have p'y := transitivity_lemma (by rw [segment_symm]; exact yp) yz pnyz
   exact transitivity_lemma xp' p'y pnxz
 
-theorem line_sidedness_is_equivalence : ∀ l : Line point, Equivalence (cut_together l) := by
+theorem line_sidedness_is_equivalence [IncidenceGeometry geo] :
+  ∀ l : Line geo, Equivalence (cut_together l) := by
   intro cut
   constructor
   · intro x; right; rfl
@@ -153,8 +154,8 @@ theorem line_sidedness_is_equivalence : ∀ l : Line point, Equivalence (cut_tog
   A cut will separate noncolinear points (that are not on the cut) into at most two parts. Similar
   to the transitivity lemma, this theorem is then extended to colinear points using line_cut_lemma.
 -/
-private theorem separation_lemma {a b p : point} {l : Line point}:
-  ¬Colinear a b p → a ∉ l → b ∉ l → p ∉ l → (a ⇇ l ⇉ b) → (p ⇇ l ⇉ a) → (l ⇇ p, b) := by
+private theorem separation_lemma {l : Line geo}: ¬Colinear a b p → a ∉ l → b ∉ l → p ∉ l →
+  (a ⇇ l ⇉ b) → (p ⇇ l ⇉ a) → (l ⇇ p, b) := by
 
   intro noncolinear anl bnl pnl lnab lnpa
   have ⟨x, xab, xl⟩ := lnab.intersects_cut
@@ -181,7 +182,7 @@ private theorem separation_lemma {a b p : point} {l : Line point}:
 Two points separated by a cut are the representatives of the two equivalence classes representing
 points on the same side of the cut.
 -/
-theorem plane_separation {l : Line point} {a b p : point}:
+theorem plane_separation [IncidenceGeometry geo] {l : Line geo}:
   a ∉ l → b ∉ l → p ∉ l → a ⇇ l ⇉ b → Dichotomy (l ⇇ p, a) (l ⇇ p, b)
   := by
   intro anl bnl pnl lnab
@@ -217,7 +218,8 @@ theorem plane_separation {l : Line point} {a b p : point}:
 namespace Betweenness.between
 
 @[simp]
-theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ b ∗ d⟫ := by
+theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
+  ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ b ∗ d⟫ := by
   intro abc bcd
 
   have ⟨l, al, bl, cl⟩ := OrderGeometry.order_colinear abc
@@ -274,8 +276,7 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
         apply line_unique
         · rw [line_symmetric]
           exact bcd.contains_left
-        · apply contains_middle
-          exact dxc
+        · apply dxc.contains_middle
       line d c _ = l := line_unique bcd.right_irrefl.symm dl cl
 
   have := separated.neg_left this
@@ -291,10 +292,12 @@ theorem quasitransitive_left {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b �
   have := unique_intersection x ?h xnb
   exact this xbs
   rw [<- line_unique dna dl al]
-  exact contains_middle xda
+  exact xda.contains_middle
 
 @[simp]
-theorem quasitransitive_right {a b c d : point} : ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ c ∗ d⟫ := by
+theorem quasitransitive_right [IncidenceGeometry geo] {a b c d : geo.point} :
+  ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ c ∗ d⟫ := by
+
   intros
   rw [order_symmetric'] at *
   apply quasitransitive_left
