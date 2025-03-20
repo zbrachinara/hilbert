@@ -48,9 +48,9 @@ def ray {geo} [OrderGeometry geo] (a b : geo.point): Set geo.point :=
 def angle {geo} [OrderGeometry geo] (a b c : geo.point) : Set geo.point :=
   ray b a ∪ ray b c
 
-def Segment (geo) [OrderGeometry geo] : Set (Locus geo) := λ x ↦ ∃ a b : geo.point, x = segment a b
-def Ray (geo) [OrderGeometry geo] : Set (Locus geo) := λ x ↦ ∃ a b : geo.point, x = ray a b
-def Angle (geo) [OrderGeometry geo] : Set (Locus geo) := λ x ↦ ∃ a b c : geo.point, x = angle a b c
+def Segment (geo) [OrderGeometry geo] := {x : Locus geo // ∃ a b, x = segment a b}
+def Ray (geo) [OrderGeometry geo] := {x : Locus geo // ∃ a b, x = ray a b}
+def Angle (geo) [OrderGeometry geo] := {x : Locus geo // ∃ a b c, x = angle a b c}
 
 structure congruent (x y : locus) : Prop
 infix:30 (name := locus_congruence) " ≅ " => congruent
@@ -58,7 +58,7 @@ infix:30 (name := locus_congruence) " ≅ " => congruent
 class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo where
   segment_congruence : ∀ a b c d : geo.point,
     ∃ p ∈ ray c d, ∀ p' ∈ ray c d, segment a b ≅ segment c p ↔ p' = p
-  segment_congruence_equivalence : Equivalence (@congruent {s : Set geo.point // s ∈ Segment geo})
+  segment_congruence_equivalence : Equivalence (@congruent (Segment geo))
   addition_congruent : ∀ a b c a' b' c' : geo.point,
     Colinear a b c → Colinear a' b' c' →
     segment a b ∩ segment b c = {b} → segment a' b' ∩ segment b' c' = {b'} →
@@ -66,7 +66,7 @@ class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo where
     segment a c ≅ segment a' c'
   angle_congruence : ∀ a b c d g : geo.point, ∃ e f : geo.point, ∀ p : geo.point,
     angle a b c ≅ angle p d g → p = e ∨ p = f
-  angle_congruence_equivalence : Equivalence (@congruent {s : Set geo.point // s ∈ Angle geo})
+  angle_congruence_equivalence : Equivalence (@congruent (Angle geo))
   sas_congruence : ∀ a b c a' b' c' : geo.point,
     segment a b ≅ segment a' b' → segment a c ≅ segment a' c' → angle b a c ≅ angle b' a' c' →
     angle a b c ≅ angle a' b' c'
