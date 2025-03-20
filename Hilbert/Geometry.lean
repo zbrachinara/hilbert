@@ -70,3 +70,14 @@ class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo where
   sas_congruence : ∀ a b c a' b' c' : geo.point,
     segment a b ≅ segment a' b' → segment a c ≅ segment a' c' → angle b a c ≅ angle b' a' c' →
     angle a b c ≅ angle a' b' c'
+
+class HilbertPlane (geo : Geometry) extends IncidenceGeometry geo, CongruenceGeometry geo
+
+inductive Parallel (l₁ l₂ : Line geo) where
+| unequal : l₁.val ∩ l₂ = ∅ → Parallel l₁ l₂
+| equal : l₁ = l₂ → Parallel l₁ l₂
+
+class ParallelGeometry (geo : Geometry) where
+  parallel (l : Line geo) (p : geo.point) : Line geo
+  parallel_contains : p ∈ parallel l p
+  parallel_is_parallel : Parallel l (parallel l p)
