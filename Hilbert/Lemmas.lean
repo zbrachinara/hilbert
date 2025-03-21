@@ -184,9 +184,8 @@ theorem trivial_nonorder : ∀ p p': geo.point, ¬ ⟪p ∗ p' ∗ p⟫ := by
   exact contra rfl
 
 @[simp]
-theorem trivial_segment : ∀ p : geo.point, segment p p = {p} := by
+theorem trivial_segment : ∀ p : geo.point, segment p p = ({p} : Locus _) := by
   intro p
-  unfold segment
   simp only [trivial_nonorder, and_false, Set.empty_def, Set.union_empty]
   apply Set.ext -- TODO might need proof automation for bigger cases
   intro p'
@@ -206,8 +205,9 @@ theorem segment_symm : ∀ p q : geo.point, (segment p q : Locus geo) = segment 
   intro p q
   apply Set.ext
   intro x
-  simp only [Set.member, on_segment, order_symmetric']
-  rw [<- or_assoc, @or_comm (x = p), or_assoc]
+  simp only [Set.mem_union, on_segment, order_symmetric', Set.insert, Set.member]
+  rw [@or_comm (x = p), <- eq_iff_iff]
+  rfl
 
 variable [IncidenceGeometry geo]
 

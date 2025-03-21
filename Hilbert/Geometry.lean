@@ -5,12 +5,17 @@ structure Geometry where
   point : Type
   line_set : Set (Set point)
 
-abbrev Locus (geo : Geometry) := (Set geo.point)
+abbrev Locus (geo : Geometry) := Set (geo.point)
+
+class AsLocus (α : outParam (Geometry → Type)) (geo : Geometry)
+  extends Coe (α geo) (Locus geo)
+instance {geo : Geometry} [AsLocus α geo] : Membership geo.point (α geo) where
+  mem locus x := x ∈ (locus : Locus geo)
 
 def Line (geo : Geometry) := {x : Set geo.point // x ∈ geo.line_set}
 instance {geo : Geometry} : Membership geo.point (Line geo) where
   mem l x := x ∈ l.val
-instance {geo : Geometry} : Coe (Line geo) (Locus geo) where
+instance {geo : Geometry} : Coe (Line geo) (Set geo.point) where
   coe x := x.val
 
 open Geometry
@@ -43,53 +48,52 @@ class OrderGeometry (geo : Geometry) extends PointOrder geo.point where
     ∀ l : Line geo, d ∈ l → c ∉ l →
     Dichotomy (∃ p ∈ l, ⟪a ∗ p ∗ c⟫) (∃ p ∈ l, ⟪b ∗ p ∗ c⟫)
 
-structure Segment (geo : Geometry) where
+structure Segment (geo : Geometry) where segment ::
   a : geo.point
   b : geo.point
-structure Ray (geo : Geometry) where
+structure Ray (geo : Geometry) where ray ::
   o : geo.point
   a : geo.point
-structure Angle (geo : Geometry) where
+structure Angle (geo : Geometry) where angle ::
   o : geo.point
   a : geo.point
   b : geo.point
 
-instance Segment.as_locus {geo} [OrderGeometry geo] : Coe (Segment geo) (Locus geo) where
+export Segment (segment)
+export Ray (ray)
+export Angle (angle)
+
+instance Segment.locus [OrderGeometry geo] : AsLocus Segment geo where
   coe segment := {segment.a, segment.b} ∪ {p : geo.point | ⟪segment.a ∗ p ∗ segment.b⟫}
-instance Segment.membership {geo} [OrderGeometry geo] : Membership geo.point (Segment geo) where
-  mem loc x := x ∈ Segment.as_locus.coe loc
-instance Ray.as_locus {geo} [OrderGeometry geo] : Coe (Ray geo) (Locus geo) where
-  coe ray := Segment.mk ray.o ray.a ∪ {p : geo.point | ⟪ray.o ∗ ray.a ∗ p⟫}
-instance Ray.membership {geo} [OrderGeometry geo] : Membership geo.point (Ray geo) where
-  mem loc x := x ∈ Ray.as_locus.coe loc
-instance Angle.as_locus {geo} [OrderGeometry geo] : Coe (Angle geo) (Locus geo) where
-  coe angle := Ray.mk angle.o angle.a ∪ Ray.mk angle.o angle.b
-instance Angle.membership {geo} [OrderGeometry geo] : Membership geo.point (Angle geo) where
-  mem loc x := x ∈ Angle.as_locus.coe loc
+instance Ray.locus [OrderGeometry geo] : AsLocus Ray geo where
+  coe ray := segment ray.o ray.a ∪ {p : geo.point | ⟪ray.o ∗ ray.a ∗ p⟫}
+instance Angle.locus [OrderGeometry geo] : AsLocus Angle geo where
+  coe angle := ray angle.o angle.a ∪ ray angle.o angle.b
 
-def segment {geo} [OrderGeometry geo] (a b : geo.point) : Locus geo := Segment.mk a b
-def ray {geo} [OrderGeometry geo] (o a : geo.point) : Locus geo := Ray.mk o a
-def angle {geo} [OrderGeometry geo] (a b c : geo.point) : Locus geo := Angle.mk a b c
+class SegmentCongruence (geo : Geometry) where
+  segments_congruent : Segment geo → Segment geo → Prop
+infix:30 (name := segment_congruence) " ≅s " => SegmentCongruence.segments_congruent
+class AngleCongruence (geo : Geometry) where
+  angles_congruent : Angle geo → Angle geo → Prop
+infix:30 (name := angle_congruence) " ≅a " => AngleCongruence.angles_congruent
 
-structure congruent (x y : locus) : Prop
-infix:30 (name := locus_congruence) " ≅ " => congruent
-
-class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo where
-  segment_copy (s₁ s₂ r₁ r₂ : geo.point) : geo.point
-  segment_congruence : ∀ a b c d : geo.point,
-    ∀ p' ∈ (ray c d), segment a b ≅ segment c p' ↔ p' = segment_copy a b c d
-  segment_congruence_equivalence : Equivalence (@congruent (Segment geo))
+class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo, SegmentCongruence geo, AngleCongruence geo where
+  segment_copy : Segment geo → Ray geo → geo.point
+  segment_congruence (seg : Segment geo) (ray : Ray geo) : ∀ p' ∈ ray,
+    seg ≅s segment ray.o p' ↔ p' = segment_copy seg ray
+  segment_congruence_equiv : Equivalence segments_congruent
   addition_congruent : ∀ a b c a' b' c' : geo.point,
     Colinear a b c → Colinear a' b' c' →
-    segment a b ∩ segment b c = {b} → (segment a' b' : Set _) ∩ segment b' c' = {b'} →
-    segment a b ≅ segment a' b' → segment b c ≅ segment b' c' →
-    segment a c ≅ segment a' c'
-  angle_congruence : ∀ a b c d g : geo.point, ∃ e f : geo.point, ∀ p : geo.point, -- TODO make same as segment_copy
-    angle a b c ≅ angle p d g → p = e ∨ p = f
-  angle_congruence_equivalence : Equivalence (@congruent (Angle geo))
+    (segment a b : Locus _) ∩ segment b c = {b} → (segment a' b' : Locus _) ∩ segment b' c' = {b'} →
+    segment a b ≅s segment a' b' → segment b c ≅s segment b' c' →
+    segment a c ≅s segment a' c'
+  angle_copy : Angle geo → Ray geo → geo.point
+  angle_congruence (a : Angle geo) (ray : Ray geo) : ∀ p' : geo.point,
+    a ≅a ⟨ray.o, ray.a, p'⟩ ↔ p' = angle_copy a ray
+  angle_congruence_equivalence : Equivalence angles_congruent
   sas_congruence : ∀ a b c a' b' c' : geo.point,
-    segment a b ≅ segment a' b' → segment a c ≅ segment a' c' → angle b a c ≅ angle b' a' c' →
-    angle a b c ≅ angle a' b' c'
+    segment a b ≅s segment a' b' → segment a c ≅s segment a' c' →
+    angle b a c ≅a angle b' a' c' → angle a b c ≅a angle a' b' c'
 
 instance {geo} [CongruenceGeometry geo]: LT (Segment geo) where
   lt a b := by
@@ -109,9 +113,10 @@ class ParallelGeometry (geo : Geometry) where
 
 private def extend_segment_by_segment {geo} [CongruenceGeometry geo]
   (a₁ a₂ b₁ b₂ : geo.point) : geo.point × geo.point := by
-  have a' := OrderGeometry.extend a₁ a₂
-  have a₃ := CongruenceGeometry.segment_copy b₁ b₂ a₂ a'
-  exact ⟨a₁, a₃⟩
+  -- have a' := OrderGeometry.extend a₁ a₂
+  -- have a₃ := CongruenceGeometry.segment_copy b₁ b₂ a₂ a'
+  -- exact ⟨a₁, a₃⟩
+  sorry
 private def extend_segment_by_segment_n {geo} [CongruenceGeometry geo]
   (a₁ a₂ b₁ b₂ : geo.point) (n : Nat) : geo.point × geo.point := match n with
   | .zero => ⟨a₁, a₁⟩

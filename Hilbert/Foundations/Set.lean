@@ -91,13 +91,6 @@ theorem member_empty {s : Set α}: (s = ∅) ↔ ¬ ∃ x, x ∈ s := by
     apply mt nonempty_exists
     exact p
 
--- theorem empty_not_exists {s : Set α}: (∀ x : α, x ∉ s) → s = ∅ := by
---   intro p
---   apply Classical.byContradiction
---   apply mt nonempty_exists
---   rw [not_exists]
---   exact p
-
 end Set
 
 -- Hack to prevent overloading -- only recognize this form if it has more than one binder (lmao)
