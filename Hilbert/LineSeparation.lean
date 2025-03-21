@@ -8,7 +8,7 @@ variable {geo} [OrderGeometry geo]
   cut. Two points are also consdiered on the same side of the cut if they are equal (for
   reflexivity), so any point on the cut is together with itself, but not with any other point.
 -/
-def cut_together (cut : Line geo) (p q : geo.point) := (segment p q) ∩ cut = ∅ ∨ p = q
+def cut_together (cut : Line geo) (p q : geo.point) := segment p q ∩ cut = ∅ ∨ p = q
 /--
   Two points are on the opposite sides of a cut when the segment through them intsersects the cut.
   This is the negation of `cut_together`.
@@ -78,7 +78,10 @@ theorem line_cut_lemma [IncidenceGeometry geo] (l cut : Line geo) :
     exact False.elim (xncut xl)
 
   have ⟨p, pcut, pnl⟩ := unshared_point cut l lncut
-  have ⟨p', pxp'⟩ := OrderGeometry.extension p x
+  let p' := OrderGeometry.extend p x
+  have pxp' : ⟪p ∗ x ∗ p'⟫ := OrderGeometry.extension
+
+  -- have ⟨p', pxp'⟩ := OrderGeometry.extension p x
 
   exists p'
   constructor

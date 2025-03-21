@@ -133,17 +133,14 @@ variable {geo} [OrderGeometry geo] {a b c : geo.point}
 @[simp]
 theorem on_segment : p ∈ segment a b ↔ p = a ∨ p = b ∨ ⟪a ∗ p ∗ b⟫ := by
   constructor
-  · unfold segment
-    simp [Set.insert, Set.member]
-    intro pab
+  · intro pab
     cases pab
     case inl ab =>
       cases ab
       · left; assumption
       · right; left; assumption
-    right; right; simp only [*]
-  · unfold segment
-    rintro (pa | pb | pab) <;> try subst p
+    right; right; assumption
+  · rintro (pa | pb | pab) <;> try subst p
     · left; simp [Set.insert]; left; rfl
     · left; simp [Set.insert]; right; rfl
     · right; exact pab
@@ -201,33 +198,16 @@ theorem order_symmetric': ∀ p q r : geo.point, ⟪p ∗ q ∗ r⟫ ↔ ⟪r �
   intros
   constructor <;> { intro x; exact order_symmetric x }
 
-theorem segment_has_left : a ∈ segment a b := by
-  unfold segment
-  rw [Set.mem_union]
-  left
-  simp only [Set.insert]
-  left
-  rfl
-
-theorem segment_has_right : b ∈ segment a b := by
-  unfold segment
-  rw [Set.mem_union]
-  left
-  simp only [Set.insert, Set.member]
-  right
-  rfl
+theorem segment_has_left : a ∈ segment a b := by rw [on_segment]; left; rfl
+theorem segment_has_right : b ∈ segment a b := by rw [on_segment]; right; left; rfl
 
 @[simp]
-theorem segment_symm : ∀ p q : geo.point, segment p q = segment q p := by
+theorem segment_symm : ∀ p q : geo.point, (segment p q : Locus geo) = segment q p := by
   intro p q
-  unfold segment
-  congr 1
-  · apply Set.ext
-    intro x
-    simp [Set.insert, Set.member]
-    exact Or.comm
-  · apply Set.ext
-    simp [Set.member]
+  apply Set.ext
+  intro x
+  simp only [Set.member, on_segment, order_symmetric']
+  rw [<- or_assoc, @or_comm (x = p), or_assoc]
 
 variable [IncidenceGeometry geo]
 
@@ -245,7 +225,7 @@ theorem contains_middle (betw : ⟪a ∗ b ∗ c⟫) : b ∈ line a c betw.cross
 
 end PointOrder.between
 
-theorem segment_in_line {anb : a ≠ b} : segment a b ⊆ line a b anb := by
+theorem segment_in_line {anb : a ≠ b} : segment a b ⊆ (line a b anb : Locus geo) := by
   unfold Set.subset
   intro a apq
   rcases on_segment.mp apq with ap | aq | apq <;> try subst a
