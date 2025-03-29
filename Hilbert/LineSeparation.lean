@@ -8,7 +8,7 @@ variable {geo} [OrderGeometry geo]
   cut. Two points are also consdiered on the same side of the cut if they are equal (for
   reflexivity), so any point on the cut is together with itself, but not with any other point.
 -/
-def cut_together (cut : Line geo) (p q : geo.point) := segment p q ∩ cut = ∅ ∨ p = q
+def cut_together (cut : Line geo) (p q : geo.point) := (segment p q : Locus geo) ∩ cut = ∅ ∨ p = q
 /--
   Two points are on the opposite sides of a cut when the segment through them intsersects the cut.
   This is the negation of `cut_together`.
@@ -41,7 +41,8 @@ Transitivity of line-sidedness, but specifically needs noncolinear points. This 
 extended to include colinear points with line_cut_lemma
 -/
 private theorem transitivity_lemma {a b c : geo.point} {l : Line geo} :
-  segment a b ∩ l = ∅ → segment b c ∩ l = ∅ → ¬Colinear a c b → segment a c ∩ l = ∅ := by
+  (segment a b : Locus geo) ∩ l = ∅ → (segment b c : Locus geo) ∩ l = ∅ → ¬Colinear a c b →
+  (segment a c ∩ l : Locus geo) = ∅ := by
   intro ab bc noncolinear
   apply Classical.byContradiction
   intro neg
@@ -71,7 +72,7 @@ private theorem transitivity_lemma {a b c : geo.point} {l : Line geo} :
   same as the cut. In this case, this theorem is vacuously true.
  -/
 theorem line_cut_lemma [IncidenceGeometry geo] (l cut : Line geo) :
-  ∀ x ∈ l, x ∉ cut → ∃ p, segment x p ∩ cut = ∅ ∧ p ∉ l := by
+  ∀ x ∈ l, x ∉ cut → ∃ p, (segment x p : Locus geo) ∩ cut = ∅ ∧ p ∉ l := by
   intro x xl xncut
   rcases Classical.em (cut = l) with lcut | lncut
   · subst l
@@ -249,9 +250,9 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
     intro bsad
     apply bsad.elim
     · rw [Set.member_empty]
+      unfold segment
       simp
-      intro _ _
-      exact ⟨b, abc, line_of_left⟩
+      exact ⟨b, (by right; exact abc), line_of_left⟩
     · exact (OrderGeometry.order_irreflexive abc).left
   )
 
@@ -261,7 +262,7 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
     intro neg
     rw [Set.member_empty, Classical.not_not] at neg
     have ⟨x, xdc, xbs⟩ := neg
-    rw [on_segment] at xdc
+    rw [on_locus, on_segment] at xdc
     rcases xdc with xd | xc | dxc
     · subst x; exact dnl xbs
     · subst x; exact cnl xbs

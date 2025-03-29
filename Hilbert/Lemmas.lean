@@ -145,6 +145,13 @@ theorem on_segment : p ∈ segment a b ↔ p = a ∨ p = b ∨ ⟪a ∗ p ∗ b�
     · left; simp [Set.insert]; right; rfl
     · right; exact pab
 
+@[simp]
+theorem on_locus : p ∈ Segment.locus.as_locus (segment a b) ↔ p ∈ segment a b := by
+  rw [on_segment, segment]
+  simp only [Segment.locus, Set.mem_union, Set.insert, Set.member]
+  rw [or_assoc]
+  exact Eq.to_iff rfl
+
 namespace PointOrder.between
 
 @[simp]
@@ -186,7 +193,7 @@ theorem trivial_nonorder : ∀ p p': geo.point, ¬ ⟪p ∗ p' ∗ p⟫ := by
 @[simp]
 theorem trivial_segment : ∀ p : geo.point, segment p p = ({p} : Locus _) := by
   intro p
-  simp only [trivial_nonorder, and_false, Set.empty_def, Set.union_empty]
+  simp only [segment, Segment.locus, trivial_nonorder, Set.empty_def, Set.union_empty]
   apply Set.ext -- TODO might need proof automation for bigger cases
   intro p'
   simp [Set.insert, Set.member]
@@ -205,7 +212,7 @@ theorem segment_symm : ∀ p q : geo.point, (segment p q : Locus geo) = segment 
   intro p q
   apply Set.ext
   intro x
-  simp only [Set.mem_union, on_segment, order_symmetric', Set.insert, Set.member]
+  simp only [segment, Segment.locus, Set.mem_union, order_symmetric', Set.insert, Set.member]
   rw [@or_comm (x = p), <- eq_iff_iff]
   rfl
 

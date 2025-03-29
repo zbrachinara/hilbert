@@ -7,9 +7,11 @@ structure Geometry where
 
 abbrev Locus (geo : Geometry) := Set (geo.point)
 
-class AsLocus (α : outParam (Geometry → Type)) (geo : Geometry)
-  extends Coe (α geo) (Locus geo)
-instance {geo : Geometry} [AsLocus α geo] : Membership geo.point (α geo) where
+class AsLocus (α : outParam (Geometry → Type)) (geo : Geometry) where
+  as_locus : α geo → Locus geo
+instance AsLocus.coe_to_locus [AsLocus α geo] : Coe (α geo) (Locus geo) where
+  coe x := AsLocus.as_locus x
+instance [AsLocus α geo] : Membership geo.point (α geo) where
   mem locus x := x ∈ (locus : Locus geo)
 
 def Line (geo : Geometry) := {x : Set geo.point // x ∈ geo.line_set}
@@ -48,27 +50,30 @@ class OrderGeometry (geo : Geometry) extends PointOrder geo.point where
     ∀ l : Line geo, d ∈ l → c ∉ l →
     Dichotomy (∃ p ∈ l, ⟪a ∗ p ∗ c⟫) (∃ p ∈ l, ⟪b ∗ p ∗ c⟫)
 
-structure Segment (geo : Geometry) where segment ::
+structure Segment (geo : Geometry) where
   a : geo.point
   b : geo.point
-structure Ray (geo : Geometry) where ray ::
+structure Ray (geo : Geometry) where
   o : geo.point
   a : geo.point
-structure Angle (geo : Geometry) where angle ::
+structure Angle (geo : Geometry) where
   o : geo.point
   a : geo.point
   b : geo.point
 
-export Segment (segment)
-export Ray (ray)
-export Angle (angle)
+def segment {geo} := @Segment.mk geo
+def ray {geo} := @Ray.mk geo
+def angle {geo} := @Angle.mk geo
 
+@[simp]
 instance Segment.locus [OrderGeometry geo] : AsLocus Segment geo where
-  coe segment := {segment.a, segment.b} ∪ {p : geo.point | ⟪segment.a ∗ p ∗ segment.b⟫}
+  as_locus segment := {segment.a, segment.b} ∪ {p : geo.point | ⟪segment.a ∗ p ∗ segment.b⟫}
+@[simp]
 instance Ray.locus [OrderGeometry geo] : AsLocus Ray geo where
-  coe ray := segment ray.o ray.a ∪ {p : geo.point | ⟪ray.o ∗ ray.a ∗ p⟫}
+  as_locus ray := segment ray.o ray.a ∪ {p : geo.point | ⟪ray.o ∗ ray.a ∗ p⟫}
+@[simp]
 instance Angle.locus [OrderGeometry geo] : AsLocus Angle geo where
-  coe angle := ray angle.o angle.a ∪ ray angle.o angle.b
+  as_locus angle := ray angle.o angle.a ∪ ray angle.o angle.b
 
 class SegmentCongruence (geo : Geometry) where
   segments_congruent : Segment geo → Segment geo → Prop
