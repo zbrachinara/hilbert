@@ -41,18 +41,18 @@ section IncidenceLemmas
 variable {geo} [igeo : IncidenceGeometry geo] {x y z : geo.point}
 
 @[simp]
-theorem line_unique {l : Line geo} (xny : x ≠ y) : x ∈ l → y ∈ l → line x y xny = l := by
+theorem line_unique {l : Line geo} (xny : x ≠ y) : x ∈ l → y ∈ l → line x y = l := by
   rw [<- and_imp]
   apply (line_uniqueness xny).mp
 
 @[simp]
-theorem line_of_left {xny : x ≠ y} : x ∈ line x y xny := ((line_uniqueness xny).mpr rfl).left
+theorem line_of_left (xny : x ≠ y) : x ∈ line x y := ((line_uniqueness xny).mpr rfl).left
 @[simp]
-theorem line_of_right {xny : x ≠ y} : y ∈ line x y xny := ((line_uniqueness xny).mpr rfl).right
+theorem line_of_right (xny : x ≠ y) : y ∈ line x y := ((line_uniqueness xny).mpr rfl).right
 -- TODO figures out what causes infinite simp loop
 -- @[simp]
-theorem line_symmetric {xny : x ≠ y} : line x y xny = line y x xny.symm :=
-  line_unique xny line_of_right line_of_left
+theorem line_symmetric (xny : x ≠ y) : line x y = line y x :=
+  line_unique xny (line_of_right xny.symm) (line_of_left xny.symm)
 
 /--
 If two lines are different, then there must be some point that they do not share.
@@ -66,8 +66,8 @@ theorem unshared_point: ∀ l l' : Line geo, l ≠ l' → ∃ p, p ∈ l ∧ p �
     · exfalso
       apply distinct_l
       exact line_unique pnq pl' ql'
-    · exact ⟨q, line_of_right, qnl'⟩
-  · exact ⟨p, line_of_left, pnl'⟩
+    · exact ⟨q, line_of_right pnq, qnl'⟩
+  · exact ⟨p, line_of_left pnq, pnl'⟩
 
 /--
   Consequence of non-triviality of the geometry -- For any line, a point must lie outside that line.
@@ -89,37 +89,37 @@ namespace Colinear
 -- TODO use macro to automate these proofs
 -- TODO split the iff
 
-theorem contains_left (ynz : y ≠ z) : Colinear x y z ↔ x ∈ line y z ynz := by
+theorem contains_left (ynz : y ≠ z) : Colinear x y z ↔ x ∈ line y z := by
   constructor
   · intro ⟨l, xl, yl, zl⟩
     rw [line_unique ynz yl zl]
     exact xl
   · intro xl
-    exact ⟨line y z ynz, xl, line_of_left, line_of_right⟩
-theorem contains_middle (xnz : x ≠ z) : Colinear x y z ↔ y ∈ line x z xnz := by
+    exact ⟨line y z, xl, line_of_left ynz, line_of_right ynz⟩
+theorem contains_middle (xnz : x ≠ z) : Colinear x y z ↔ y ∈ line x z := by
   rw [left_symmetric]; exact contains_left xnz
-theorem contains_right (xny : x ≠ y) : Colinear x y z ↔ z ∈ line x y xny := by
+theorem contains_right (xny : x ≠ y) : Colinear x y z ↔ z ∈ line x y := by
   rw [right_symmetric]; exact contains_middle xny
 
 theorem left_transfers_line (xny : x ≠ y) (xnz : x ≠ z) (colinear : Colinear x y z):
-  line x y xny = line x z xnz := by
-  exact line_unique (xny) line_of_left ((contains_middle xnz).mp colinear)
+  line x y = line x z := by
+  exact line_unique xny (line_of_left xnz) ((contains_middle xnz).mp colinear)
 theorem middle_transfers_line (ynx : y ≠ x) (ynz : y ≠ z) (colinear : Colinear x y z) :
-  line y x ynx = line y z ynz := by
+  line y x = line y z := by
   rw [left_symmetric] at colinear; exact left_transfers_line ynx ynz colinear
 theorem right_transfers_line (znx : z ≠ x) (zny : z ≠ y) (colinear : Colinear x y z) :
-  line z x znx = line z y zny := by
+  line z x = line z y := by
   rw [right_symmetric] at colinear; exact middle_transfers_line znx zny colinear
 
 end Colinear
 
-theorem extralinear_left (ynz : y ≠ z) : x ∉ line y z ynz ↔ ¬ Colinear x y z := by
+theorem extralinear_left (ynz : y ≠ z) : x ∉ line y z ↔ ¬ Colinear x y z := by
   constructor
   · apply mt; intro x; exact (Colinear.contains_left ynz).mp x
   · apply mt; intro x; exact (Colinear.contains_left ynz).mpr x
-theorem extralinear_middle (xnz: x ≠ z) : y ∉ line x z xnz ↔ ¬ Colinear x y z := by
+theorem extralinear_middle (xnz: x ≠ z) : y ∉ line x z ↔ ¬ Colinear x y z := by
   rw [Colinear.left_symmetric]; exact extralinear_left xnz
-theorem extralinear_right (xny : x ≠ y) : z ∉ line x y xny ↔ ¬ Colinear x y z := by
+theorem extralinear_right (xny : x ≠ y) : z ∉ line x y ↔ ¬ Colinear x y z := by
   rw [Colinear.right_symmetric]; exact extralinear_middle xny
 
 end IncidenceLemmas
@@ -220,24 +220,24 @@ variable [IncidenceGeometry geo]
 
 namespace PointOrder.between
 
-theorem contains_left (betw : ⟪a ∗ b ∗ c⟫) : a ∈ line b c betw.right_irrefl := by
+theorem contains_left (betw : ⟪a ∗ b ∗ c⟫) : a ∈ line b c := by
   apply (Colinear.contains_left betw.right_irrefl).mp
   exact order_colinear betw
-theorem contains_right (betw : ⟪a ∗ b ∗ c⟫) : c ∈ line a b betw.left_irrefl := by
+theorem contains_right (betw : ⟪a ∗ b ∗ c⟫) : c ∈ line a b := by
   apply (Colinear.contains_right betw.left_irrefl).mp
   exact order_colinear betw
-theorem contains_middle (betw : ⟪a ∗ b ∗ c⟫) : b ∈ line a c betw.cross_irrefl := by
+theorem contains_middle (betw : ⟪a ∗ b ∗ c⟫) : b ∈ line a c := by
   apply (Colinear.contains_middle betw.cross_irrefl).mp
   exact order_colinear betw
 
 end PointOrder.between
 
-theorem segment_in_line {anb : a ≠ b} : segment a b ⊆ (line a b anb : Locus geo) := by
+theorem segment_in_line (anb : a ≠ b) : segment a b ⊆ (line a b : Locus geo) := by
   unfold Set.subset
   intro a apq
   rcases on_segment.mp apq with ap | aq | apq <;> try subst a
-  · exact line_of_left
-  · exact line_of_right
+  · exact line_of_left anb
+  · exact line_of_right anb
   have ⟨l, pl, al, ql⟩ := order_colinear apq
   rw [line_unique anb pl ql]
   exact al

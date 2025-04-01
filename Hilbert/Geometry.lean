@@ -26,9 +26,9 @@ structure Colinear {geo : Geometry} (a b c : geo.point) : Prop where
   evidence : ∃ l : Line geo, a ∈ l ∧ b ∈ l ∧ c ∈ l
 
 class IncidenceGeometry (geo : Geometry) where
-  line (x y : geo.point) (xny : x ≠ y) : Line geo
-  line_uniqueness {x y : geo.point} {l' : Line geo} (xny : x ≠ y) : (x ∈ l' ∧ y ∈ l' ↔ line x y xny = l')
-  line_nonempty : ∀ l, ∃ x y, ∃ xny, line x y xny = l
+  line (x y : geo.point) : Line geo
+  line_uniqueness {x y : geo.point} {l' : Line geo} (xny : x ≠ y) : (x ∈ l' ∧ y ∈ l' ↔ line x y = l')
+  line_nonempty : ∀ l, ∃ x y, x ≠ y ∧ line x y = l
   nontrivial : ∃ a b c : geo.point, ¬ Colinear a b c
 
 export IncidenceGeometry (line)

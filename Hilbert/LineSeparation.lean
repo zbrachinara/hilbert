@@ -91,11 +91,11 @@ theorem line_cut_lemma [IncidenceGeometry geo] (l cut : Line geo) :
     rw [not_exists]
     simp only [Set.mem_inter, mem_line, not_and]
     intro y yxp' ycut
-    suffices cut = line x p' pxp'.right_irrefl by apply xncut; rw [this]; exact line_of_left
+    suffices cut = line x p' by apply xncut; rw [this]; exact line_of_left pxp'.right_irrefl
     have pny : p ≠ y := by intro py; subst p; exact pxp'.outside_segment yxp'
     calc
-      cut = line p y _ := by symm; exact line_unique pny pcut ycut
-      line p y _ = line x p' _ := line_unique pny (pxp'.contains_left) (segment_in_line y yxp')
+      cut = line p y := by symm; exact line_unique pny pcut ycut
+      line p y = line x p' := line_unique pny (pxp'.contains_left) (segment_in_line pxp'.right_irrefl y yxp')
   -- Part 2 -- p' doesn't lie with x
   · intro neg
     apply pnl
@@ -133,14 +133,14 @@ theorem line_sidedness_transitive [IncidenceGeometry geo] : ∀ l : Line geo,
     intro yl
     apply Set.member_empty.mp xy
     exact ⟨y, segment_has_right, yl⟩
-  have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y xny) cut y line_of_right this
+  have ⟨p, yp, p_extralinear⟩ := line_cut_lemma (line x y) cut y (line_of_right xny) this
 
   -- because `p' ∉ line x y`, it also is not colinear with any of the other lines.
   have pnxy := (extralinear_middle xny).mp p_extralinear
-  rw [line_symmetric, colinear.right_transfers_line xny.symm ynz, line_symmetric]
+  rw [line_symmetric xny, colinear.right_transfers_line xny.symm ynz, line_symmetric ynz]
     at p_extralinear
   have pnyz := (extralinear_left ynz.symm).mp p_extralinear
-  rw [<- colinear.middle_transfers_line xnz.symm ynz.symm, line_symmetric] at p_extralinear
+  rw [<- colinear.middle_transfers_line xnz.symm ynz.symm, line_symmetric xnz.symm] at p_extralinear
   have pnxz := (extralinear_right xnz).mp p_extralinear
 
   have xp' := transitivity_lemma xy yp pnxy
@@ -205,7 +205,7 @@ theorem plane_separation [IncidenceGeometry geo] {l : Line geo}:
     rcases Classical.em (Colinear a b p) with colinear | noncolinear
     rotate_left
     · exact separation_lemma noncolinear anl bnl pnl lnab lnpa
-    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b anb) l p ((Colinear.contains_right anb).mp colinear) pnl
+    have ⟨r, prl, rnab⟩ := line_cut_lemma (line a b) l p ((Colinear.contains_right anb).mp colinear) pnl
     have pr : l ⇇ p, r := by left; exact prl
     have rnl : r ∉ l := by
       intro rl
@@ -230,17 +230,17 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
   have ⟨l', _, _, dl⟩ := OrderGeometry.order_colinear bcd
   have ⟨s, snl⟩ := not_colinear_to l
   have : l = l' := by calc
-    l = line b c _ := by symm; apply line_unique abc.right_irrefl bl cl
-    line b c _ = l' := by apply line_unique abc.right_irrefl <;> assumption
+    l = line b c := by symm; apply line_unique abc.right_irrefl bl cl
+    line b c = l' := by apply line_unique abc.right_irrefl <;> assumption
   subst this
 
   have bns : b ≠ s := by intro bs; subst b; exact snl bl
 
-  have unique_intersection : ∀ p ∈ l, p ≠ b → p ∉ line b s bns := by
+  have unique_intersection : ∀ p ∈ l, p ≠ b → p ∉ line b s := by
     intro p pl pnb pbs
     apply snl
-    rw [<- line_unique pnb pl bl, line_unique pnb pbs line_of_left]
-    exact line_of_right
+    rw [<- line_unique pnb pl bl, line_unique pnb pbs (line_of_left bns)]
+    exact line_of_right bns
 
   have anl := (unique_intersection a al abc.left_irrefl)
   have cnl := (unique_intersection c cl abc.right_irrefl.symm)
@@ -252,11 +252,12 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
     · rw [Set.member_empty]
       unfold segment
       simp
-      exact ⟨b, (by right; exact abc), line_of_left⟩
+      exact ⟨b, (by right; exact abc), line_of_left bns⟩
     · exact (OrderGeometry.order_irreflexive abc).left
   )
 
-  have : line b s bns ⇇ d, c := by
+  -- TODO extract as line separation -- depends on s not colinear to b d c and ⟪b ∗ d ∗ c⟫
+  have : line b s ⇇ d, c := by
     left
     apply Classical.byContradiction
     intro neg
@@ -267,7 +268,7 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
     · subst x; exact dnl xbs
     · subst x; exact cnl xbs
     apply snl
-    suffices (l = line b s bns) by rw [this]; exact line_of_right
+    suffices l = line b s by rw [this]; exact line_of_right bns
     symm
     have bnx : b ≠ x := by
       intro bx
@@ -275,13 +276,13 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
       apply bcd.exclusive_left
       exact dxc.symm
     calc
-      line b s _ = line b x _ := by symm; exact line_unique bnx line_of_left xbs
-      line b x _ = line d c _ := by
-        apply line_unique
-        · rw [line_symmetric]
+      line b s = line b x := by symm; exact line_unique bnx (line_of_left bns) xbs
+      line b x = line d c := by
+        apply line_unique bnx
+        · rw [line_symmetric bcd.right_irrefl.symm]
           exact bcd.contains_left
         · apply dxc.contains_middle
-      line d c _ = l := line_unique bcd.right_irrefl.symm dl cl
+      line d c = l := line_unique bcd.right_irrefl.symm dl cl
 
   have := separated.neg_left this
   rw [<- cut_apart] at this
