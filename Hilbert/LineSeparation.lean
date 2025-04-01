@@ -219,6 +219,44 @@ theorem plane_separation [IncidenceGeometry geo] {l : Line geo}:
     suffices l ⇇ r, b from eq.trans pr this
     exact separation_lemma ((extralinear_right anb).mp rnab) anl bnl rnl lnab this
 
+/--
+A particular case of plane separation where the points are colinear and ordered. In this case, the
+plane separation respects the ordering.
+-/
+theorem line_separation [IncidenceGeometry geo] {s : geo.point} : s ∉ line b c → ⟪a ∗ b ∗ c⟫ →
+  line a s ⇇ b, c := by
+  intro snbc abc
+  left
+  apply Classical.byContradiction
+  intro neg
+  rw [Set.member_empty, Classical.not_not] at neg
+  have ⟨x, xbc, xas⟩ := neg
+  rw [on_locus, on_segment] at xbc
+
+  have ans : a ≠ s := by intro as; subst a; apply snbc; exact abc.contains_left
+
+  rcases xbc with xb | xc | bxc <;> apply snbc <;> try subst x
+  · rw [<- abc.colinear.middle_transfers_line abc.left_irrefl.symm abc.right_irrefl]
+    apply line_exchange_left ans.symm abc.left_irrefl.symm
+    rw [line_symmetric ans.symm]
+    exact xas
+  · rw [line_symmetric abc.right_irrefl, <- abc.colinear.right_transfers_line abc.cross_irrefl.symm abc.right_irrefl.symm]
+    apply line_exchange_left ans.symm abc.cross_irrefl.symm
+    rw [line_symmetric ans.symm]
+    exact xas
+
+  have anx : a ≠ x := by intro ax; subst x; exact bxc.exclusive_left abc
+  suffices line a s = line b c by rw [<- this]; exact line_of_right ans
+  calc
+    line a s = line a x := by symm; exact line_unique anx (line_of_left ans) xas
+    line a x = line c b := by
+      apply line_unique anx
+      · rw [line_symmetric abc.right_irrefl.symm]
+        exact abc.contains_left
+      · rw [line_symmetric abc.right_irrefl.symm]
+        apply bxc.contains_middle
+    line c b = line b c := line_symmetric abc.right_irrefl.symm
+
 namespace Betweenness.between
 
 @[simp]
@@ -226,8 +264,8 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
   ⟪a ∗ b ∗ c⟫ → ⟪b ∗ c ∗ d⟫ → ⟪a ∗ b ∗ d⟫ := by
   intro abc bcd
 
-  have ⟨l, al, bl, cl⟩ := OrderGeometry.order_colinear abc
-  have ⟨l', _, _, dl⟩ := OrderGeometry.order_colinear bcd
+  have ⟨l, al, bl, cl⟩ := abc.colinear
+  have ⟨l', _, _, dl⟩ := bcd.colinear
   have ⟨s, snl⟩ := not_colinear_to l
   have : l = l' := by calc
     l = line b c := by symm; apply line_unique abc.right_irrefl bl cl
@@ -256,42 +294,19 @@ theorem quasitransitive_left [IncidenceGeometry geo] {a b c d : geo.point} :
     · exact (OrderGeometry.order_irreflexive abc).left
   )
 
-  -- TODO extract as line separation -- depends on s not colinear to b d c and ⟪b ∗ d ∗ c⟫
-  have : line b s ⇇ d, c := by
-    left
-    apply Classical.byContradiction
-    intro neg
-    rw [Set.member_empty, Classical.not_not] at neg
-    have ⟨x, xdc, xbs⟩ := neg
-    rw [on_locus, on_segment] at xdc
-    rcases xdc with xd | xc | dxc
-    · subst x; exact dnl xbs
-    · subst x; exact cnl xbs
+  have : s ∉ line c d := by
+    intro scd
     apply snl
-    suffices l = line b s by rw [this]; exact line_of_right bns
-    symm
-    have bnx : b ≠ x := by
-      intro bx
-      subst x
-      apply bcd.exclusive_left
-      exact dxc.symm
-    calc
-      line b s = line b x := by symm; exact line_unique bnx (line_of_left bns) xbs
-      line b x = line d c := by
-        apply line_unique bnx
-        · rw [line_symmetric bcd.right_irrefl.symm]
-          exact bcd.contains_left
-        · apply dxc.contains_middle
-      line d c = l := line_unique bcd.right_irrefl.symm dl cl
-
-  have := separated.neg_left this
+    rw [<- line_unique bcd.right_irrefl cl dl]
+    exact scd
+  have := line_separation this bcd |> line_sidedness_symmetric _ |> separated.neg_left
   rw [<- cut_apart] at this
 
   have ⟨⟨x, xda, xbs⟩, dna⟩ := this.defn
   rcases on_segment.mp xda with xd | xa | xda <;> try subst x; exfalso
   · exact dnl xbs
   · exact anl xbs
-  suffices x = b by { subst x ; exact xda.symm }
+  suffices x = b by subst x ; exact xda.symm
   apply Classical.byContradiction
   intro xnb
   have := unique_intersection x ?h xnb

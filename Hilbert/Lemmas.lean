@@ -113,6 +113,11 @@ theorem right_transfers_line (znx : z ≠ x) (zny : z ≠ y) (colinear : Colinea
 
 end Colinear
 
+theorem line_exchange_left (ynz : y ≠ z) (xnz : x ≠ z) : x ∈ line y z → y ∈ line x z := by
+  rw [<- Colinear.contains_left xnz, Colinear.contains_middle ynz]; exact id
+theorem line_exchange_right (ynz : y ≠ z) (xny : x ≠ y) : x ∈ line y z → z ∈ line x y := by
+  rw [line_symmetric]; apply line_exchange_left ynz.symm xny; exact ynz
+
 theorem extralinear_left (ynz : y ≠ z) : x ∉ line y z ↔ ¬ Colinear x y z := by
   constructor
   · apply mt; intro x; exact (Colinear.contains_left ynz).mp x
@@ -153,6 +158,8 @@ theorem on_locus : p ∈ Segment.locus.as_locus (segment a b) ↔ p ∈ segment 
   exact Eq.to_iff rfl
 
 namespace PointOrder.between
+
+theorem colinear (abc : ⟪a ∗ b ∗ c⟫) : Colinear a b c := OrderGeometry.order_colinear abc
 
 @[simp]
 theorem left_irrefl (abc : ⟪a ∗ b ∗ c⟫) : a ≠ b := (order_irreflexive abc).right.right
