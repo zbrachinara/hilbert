@@ -102,8 +102,9 @@ class CongruenceGeometry (geo : Geometry) extends OrderGeometry geo, SegmentCong
 
 instance {geo} [CongruenceGeometry geo]: LT (Segment geo) where
   lt a b := by
-    sorry
-
+    have b_ray := ray b.a b.b
+    have a' := CongruenceGeometry.segment_copy a b_ray
+    exact ⟪b.a ∗ a' ∗ b.b⟫
 
 class HilbertPlane (geo : Geometry) extends IncidenceGeometry geo, CongruenceGeometry geo
 
