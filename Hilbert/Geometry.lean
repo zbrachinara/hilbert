@@ -42,7 +42,7 @@ class OrderGeometry (geo : Geometry) extends PointOrder geo.point where
   order_irreflexive : ∀ {a b c : geo.point}, ⟪a ∗ b ∗ c⟫ → a ≠ c ∧ b ≠ c ∧ a ≠ b
   order_colinear {a b c : geo.point} : ⟪a ∗ b ∗ c⟫ → Colinear a b c
   extend (a b : geo.point) : geo.point
-  extension : ⟪a ∗ b ∗ extend a b⟫
+  extension : ⟪a ∗ b ∗ extend a b⟫ -- TODO a ≠ b
   order_unique : ∀ {a b c : geo.point}, a ≠ b → b ≠ c → a ≠ c → Colinear a b c →
     Trichotomy ⟪a ∗ b ∗ c⟫ ⟪b ∗ a ∗ c⟫ ⟪a ∗ c ∗ b⟫
   pasch {a b c : geo.point} : ¬ Colinear a b c →
@@ -118,19 +118,18 @@ class ParallelGeometry (geo : Geometry) where
   parallel_is_parallel : Parallel l (parallel l p)
 
 private def extend_segment_by_segment {geo} [CongruenceGeometry geo]
-  (a₁ a₂ b₁ b₂ : geo.point) : geo.point × geo.point := by
-  -- have a' := OrderGeometry.extend a₁ a₂
-  -- have a₃ := CongruenceGeometry.segment_copy b₁ b₂ a₂ a'
-  -- exact ⟨a₁, a₃⟩
-  sorry
+  (s₁ s₂ : Segment geo) : Segment geo := by
+  have c := OrderGeometry.extend s₁.a s₁.b
+  have s₁s₂ := CongruenceGeometry.segment_copy s₂ (ray s₁.b c)
+  exact segment s₁.a s₁s₂
 private def extend_segment_by_segment_n {geo} [CongruenceGeometry geo]
-  (a₁ a₂ b₁ b₂ : geo.point) (n : Nat) : geo.point × geo.point := match n with
-  | .zero => ⟨a₁, a₁⟩
+  (s₁ s₂ : Segment geo) (n : Nat) : Segment geo := match n with
+  | .zero => s₁
   | .succ n' => by
-    have ⟨x₁, x₂⟩ := extend_segment_by_segment a₁ a₂ b₁ b₂
-    exact extend_segment_by_segment_n x₁ x₂ b₁ b₂ n'
-private def extend_segment_n {geo} [CongruenceGeometry geo] (s₁ s₂ : geo.point) (n : Nat) :
-  geo.point × geo.point := extend_segment_by_segment_n s₁ s₁ s₁ s₂ n
+    have s' := extend_segment_by_segment s₁ s₂
+    exact extend_segment_by_segment_n s' s₂ n'
+private def extend_segment_n {geo} [CongruenceGeometry geo]
+  (s : Segment geo) (n : Nat) : Segment geo := extend_segment_by_segment_n s s n
 
 class ContinuousGeometry (geo : Geometry) extends CongruenceGeometry geo where
-  archimedean : sorry
+  archimedean (seg target : Segment geo) : ∃ n, target < extend_segment_n seg n
